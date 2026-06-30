@@ -78,9 +78,33 @@ header{
 .theme-toggle:active{transform:scale(0.92);}
 .hero{
   position:relative;
-  height:100vh;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:80px 20px 0;
+  min-height:100vh;
+  display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;
+  padding:110px 28px 50px;
+  gap:36px;
+  transition:flex-direction .4s ease;
+}
+.hero.expanded{flex-direction:column;}
+.hero-content{
+  flex:1 1 360px;max-width:440px;
+}
+.hero.expanded .hero-content{flex:0 0 auto;max-width:100%;}
+.globe-stage{
+  position:relative;
+  flex:1 1 360px;
+  width:min(560px, 92vw);
+  height:min(480px, 54vh);
+  border-radius:28px;
+  overflow:hidden;
+  background:var(--bg-elev);
+  border:1px solid var(--border);
+  box-shadow:0 20px 50px rgba(0,0,0,0.25);
+  transition:width .6s cubic-bezier(.25,.8,.3,1), height .6s cubic-bezier(.25,.8,.3,1), max-width .6s ease;
+}
+.hero.expanded .globe-stage{
+  width:min(900px, 94vw);
+  height:min(680px, 78vh);
+  flex:0 0 auto;
 }
 #globe-canvas{position:absolute;inset:0;width:100%;height:100%;}
 #map-container{
@@ -92,9 +116,7 @@ header{
 .hero-content{
   position:relative;z-index:5;
   display:flex;flex-direction:column;align-items:center;
-  pointer-events:none;
 }
-.hero-content.shrink{transform:translateY(-30vh);transition:transform .8s cubic-bezier(.25,.8,.3,1);}
 .eyebrow{
   font-family:'JetBrains Mono',monospace;
   font-size:11px;letter-spacing:2px;color:var(--teal);
@@ -116,7 +138,7 @@ h1{
 .subtitle{
   color:var(--text-secondary);
   font-size:15px;text-align:center;max-width:520px;
-  margin-bottom:36px;
+  margin-bottom:18px;
 }
 .search-wrap{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:10px;}
 .search-lens{
@@ -155,24 +177,33 @@ h1{
 .search-hint.ok{color:var(--teal);}
 .back-btn{
   pointer-events:auto;
-  position:absolute;top:90px;display:none;
+  position:absolute;top:14px;right:14px;display:none;
   align-items:center;gap:6px;
-  font-size:13px;color:var(--text-secondary);
+  font-size:12.5px;color:var(--text-secondary);
   background:var(--bg-card);border:1px solid var(--border);
-  padding:8px 16px;border-radius:20px;cursor:pointer;z-index:6;
+  padding:7px 14px;border-radius:20px;cursor:pointer;z-index:6;
 }
 .back-btn.show{display:flex;}
-.station-info{
-  position:absolute;bottom:140px;z-index:6;
+.station-table{
+  position:absolute;bottom:14px;right:14px;left:14px;z-index:6;
   background:var(--bg-card);border:1px solid var(--border-strong);
-  border-radius:14px;padding:16px 20px;
-  display:none;min-width:260px;
-  box-shadow:0 8px 30px rgba(0,0,0,.25);
+  border-radius:14px;padding:14px 16px;
+  display:none;
+  box-shadow:0 8px 24px rgba(0,0,0,.25);
 }
-.station-info.show{display:block;}
-.station-info .name{font-weight:700;font-size:15px;margin-bottom:6px;}
-.station-info .row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);padding:3px 0;}
-.station-info .row span:last-child{color:var(--text-primary);font-family:'JetBrains Mono',monospace;direction:ltr;}
+.station-table.show{display:block;}
+.station-table .st-name{font-weight:700;font-size:14px;margin-bottom:10px;}
+.station-table table{width:100%;border-collapse:collapse;font-size:12px;}
+.station-table td{padding:5px 0;color:var(--text-secondary);}
+.station-table td.v{color:var(--text-primary);font-weight:500;text-align:left;font-family:'JetBrains Mono',monospace;direction:ltr;}
+.station-table .st-actions{display:flex;gap:8px;margin-top:10px;}
+.station-table .st-btn{
+  flex:1;text-align:center;font-size:12px;padding:8px;border-radius:8px;
+  border:1px solid var(--border-strong);background:var(--bg);color:var(--text-primary);
+  text-decoration:none;cursor:pointer;transition:.2s;
+}
+.station-table .st-btn:hover{border-color:var(--teal);}
+.station-table .st-btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;}
 .cards-section{
   position:relative;z-index:5;
   padding:0 32px 60px;
@@ -188,19 +219,25 @@ h1{
   border:1px solid var(--border);
   border-radius:4px;
   border-right:3px solid var(--teal);
-  padding:18px 20px;
+  padding:14px 20px;
   cursor:pointer;
-  transition:border-color .2s, transform .2s;
+  transition:border-color .2s, transform .2s, padding .35s ease;
 }
 .stat-card:nth-child(2){border-right-color:var(--blue-mid);}
 .stat-card:nth-child(3){border-right-color:#C8A24E;}
 .stat-card:hover{transform:translateY(-2px);}
-.stat-card .top{display:flex;justify-content:space-between;align-items:flex-start;}
+.stat-card .top{display:flex;justify-content:space-between;align-items:center;}
 .stat-card .num{
   font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:700;
   direction:ltr;display:block;text-align:right;
+  max-height:0;opacity:0;overflow:hidden;
+  transition:max-height .4s cubic-bezier(.25,.8,.3,1), opacity .3s ease, margin-bottom .4s ease;
+  margin-bottom:0;
 }
-.stat-card .label{font-size:13px;color:var(--text-secondary);margin-top:4px;}
+.stat-card.expanded .num{max-height:44px;opacity:1;margin-bottom:2px;}
+.stat-card.expanded{padding:18px 20px;}
+.stat-card .label{font-size:13px;color:var(--text-secondary);transition:font-size .3s ease;}
+.stat-card.expanded .label{font-size:12px;}
 .stat-card .chev{color:var(--text-secondary);transition:transform .3s;font-size:14px;}
 .stat-card.expanded .chev{transform:rotate(180deg);}
 .stat-panel{
@@ -216,6 +253,10 @@ footer{
   text-align:center;padding:24px;font-size:11px;color:var(--text-secondary);
   border-top:1px solid var(--border);
 }
+@media (max-width:900px){
+  .hero{flex-direction:column;}
+  .hero-content{max-width:560px;}
+}
 @media (max-width:600px){
   .search-lens.open{width:88vw;}
   header{padding:12px 14px;}
@@ -225,9 +266,8 @@ footer{
   .header-actions{gap:6px;}
   .login-btn{padding:7px 12px;font-size:12px;}
   .theme-toggle{width:34px;height:34px;}
-  .hero{padding-top:110px;}
-  .hero-content{transform:translateY(14vh);}
-  .hero-content.shrink{transform:translateY(-16vh);}
+  .hero{padding-top:100px;gap:22px;flex-direction:column;}
+  .globe-stage{height:min(440px, 50vh);width:min(560px,92vw);}
 }
 @media (max-width:340px){
   .logo-text{font-size:11px;}
@@ -261,28 +301,30 @@ footer{
   </div>
 </header>
 
-<section class="hero">
-  <canvas id="globe-canvas"></canvas>
-  <div id="map-container"></div>
-
-  <div class="back-btn" id="backBtn">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-    رجوع للبحث
-  </div>
-
-  <div class="station-info" id="stationInfo"></div>
-
+<section class="hero" id="heroSection">
   <div class="hero-content" id="heroContent">
     <div class="eyebrow">SEC // DISTRIBUTION NETWORK</div>
     <h1>ابحث عن <span class="h1-accent">إحداثيات</span> محطتك</h1>
     <p class="subtitle">أدخل رقم محطة التوزيع أو محطة التحويل لعرض موقعها بدقة على الخريطة</p>
     <div class="search-wrap">
       <div class="search-lens" id="searchLens">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <svg id="searchLensIcon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <input id="searchInput" type="text" placeholder="مثال: T-014 أو ١٤" inputmode="text">
       </div>
       <div class="search-hint" id="searchHint"></div>
     </div>
+  </div>
+
+  <div class="globe-stage" id="globeStage">
+    <canvas id="globe-canvas"></canvas>
+    <div id="map-container"></div>
+
+    <div class="back-btn" id="backBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      رجوع للبحث
+    </div>
+
+    <div class="station-table" id="stationTable"></div>
   </div>
 </section>
 
@@ -303,14 +345,14 @@ footer{
     </div>
     <div class="stat-card" data-card="additions">
       <div class="top">
-        <div><span class="num" id="countAdditions">0</span><div class="label">إضافات هذا الشهر</div></div>
+        <div><span class="num" id="countAdditions">0</span><div class="label">إضافات</div></div>
         <span class="chev">▾</span>
       </div>
       <div class="stat-panel"><div class="stat-panel-inner" id="panelAdditions"></div></div>
     </div>
     <div class="stat-card" data-card="edits">
       <div class="top">
-        <div><span class="num" id="countEdits">0</span><div class="label">تعديلات هذا الشهر</div></div>
+        <div><span class="num" id="countEdits">0</span><div class="label">تعديلات</div></div>
         <span class="chev">▾</span>
       </div>
       <div class="stat-panel"><div class="stat-panel-inner" id="panelEdits"></div></div>
@@ -428,29 +470,23 @@ themeToggle.addEventListener('click', ()=>{
   if(currentTileLayer) swapTiles(next);
 });
 
-/* ===== الكرة الأرضية Three.js ===== */
+/* ===== الكرة الأرضية Three.js — محصورة بحدود globeStage فقط ===== */
 const canvas = document.getElementById('globe-canvas');
+const stageEl = document.getElementById('globeStage');
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+function stageSize(){
+  return { w: stageEl.clientWidth, h: stageEl.clientHeight };
+}
+const camera = new THREE.PerspectiveCamera(50, stageSize().w/stageSize().h, 0.1, 1000);
 camera.position.z = 4.4;
 function applyResponsiveGlobeOffset(){
-  const w = window.innerWidth;
-  if(w <= 420){
-    camera.position.z = 6.2;
-    camera.position.y = 0.65;
-  } else if(w <= 600){
-    camera.position.z = 5.4;
-    camera.position.y = 0.6;
-  } else if(w <= 900){
-    camera.position.z = 5.0;
-    camera.position.y = 0.2;
-  } else {
-    camera.position.z = 4.4;
-    camera.position.y = 0;
-  }
+  const { w } = stageSize();
+  if(w <= 420){ camera.position.z = 5.2; }
+  else if(w <= 600){ camera.position.z = 4.7; }
+  else { camera.position.z = 4.2; }
 }
 const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(stageSize().w, stageSize().h);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 
 const globeGroup = new THREE.Group();
@@ -509,12 +545,17 @@ function animate(){
 }
 animate();
 
-window.addEventListener('resize', ()=>{
-  camera.aspect = window.innerWidth/window.innerHeight;
+function syncRendererToStage(){
+  const { w, h } = stageSize();
+  if(w === 0 || h === 0) return;
+  camera.aspect = w/h;
   applyResponsiveGlobeOffset();
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+  renderer.setSize(w, h);
+  if(leafletMap) leafletMap.invalidateSize();
+}
+new ResizeObserver(syncRendererToStage).observe(stageEl);
+window.addEventListener('resize', syncRendererToStage);
 applyResponsiveGlobeOffset();
 
 /* ===== البحث + الخريطة ===== */
@@ -524,7 +565,14 @@ const searchHint = document.getElementById('searchHint');
 const heroContent = document.getElementById('heroContent');
 const mapContainer = document.getElementById('map-container');
 const backBtn = document.getElementById('backBtn');
-const stationInfo = document.getElementById('stationInfo');
+const stationTable = document.getElementById('stationTable');
+
+document.getElementById('searchLensIcon').addEventListener('click', (e)=>{
+  if(searchLens.classList.contains('open') && searchInput.value.trim()){
+    e.stopPropagation();
+    performSearch();
+  }
+});
 
 searchLens.addEventListener('click', (e)=>{
   if(!searchLens.classList.contains('open')){
@@ -552,38 +600,40 @@ function hasValidSession(){
   }catch(e){ return false; }
 }
 
-searchInput.addEventListener('keydown', async (e)=>{
-  if(e.key==='Enter'){
-    const raw = searchInput.value.trim();
-    if(!raw) return;
+async function performSearch(){
+  const raw = searchInput.value.trim();
+  if(!raw) return;
 
-    if(!hasValidSession()){
-      searchHint.innerHTML = 'سجّل دخول للحصول على النتيجة — <a href="auth.html" style="color:var(--teal);font-weight:500;text-decoration:underline">تسجيل الدخول</a>';
-      searchHint.className = 'search-hint err';
-      return;
-    }
-
-    searchHint.textContent = 'جاري البحث...';
-    searchHint.className = 'search-hint';
-    try{
-      const result = await callBackend('searchStation', { query: raw });
-      if(result.found){
-        searchHint.textContent = '';
-        goToStation({
-          id: result.id, name: result.name,
-          lat: result.lat, lng: result.lng,
-          edited: result.editedDate ? new Date(result.editedDate).toLocaleDateString('ar-SA') : '—',
-          editor: result.editor || '—'
-        });
-      } else {
-        searchHint.textContent = 'رقم المحطة غير موجود، تحقق من الرقم وحاول مجددًا';
-        searchHint.className = 'search-hint err';
-      }
-    }catch(err){
-      searchHint.textContent = 'تعذّر الاتصال بالخادم، حاول مرة أخرى';
-      searchHint.className = 'search-hint err';
-    }
+  if(!hasValidSession()){
+    searchHint.innerHTML = 'سجّل دخول للحصول على النتيجة — <a href="auth.html" style="color:var(--teal);font-weight:500;text-decoration:underline">تسجيل الدخول</a>';
+    searchHint.className = 'search-hint err';
+    return;
   }
+
+  searchHint.textContent = 'جاري البحث...';
+  searchHint.className = 'search-hint';
+  try{
+    const result = await callBackend('searchStation', { query: raw });
+    if(result.found){
+      searchHint.textContent = '';
+      goToStation({
+        id: result.id, name: result.name, type: result.type,
+        lat: result.lat, lng: result.lng,
+        region: result.region, feeder: result.feeder,
+        googleMapLink: result.googleMapLink
+      });
+    } else {
+      searchHint.textContent = 'رقم المحطة غير موجود، تحقق من الرقم وحاول مجددًا';
+      searchHint.className = 'search-hint err';
+    }
+  }catch(err){
+    searchHint.textContent = 'تعذّر الاتصال بالخادم، حاول مرة أخرى';
+    searchHint.className = 'search-hint err';
+  }
+}
+
+searchInput.addEventListener('keydown', (e)=>{
+  if(e.key==='Enter') performSearch();
 });
 
 let leafletMap = null, currentTileLayer = null, marker = null;
@@ -608,8 +658,8 @@ const teal = ()=> document.body.getAttribute('data-theme')==='dark' ? '#4DD6B5':
 
 function goToStation(s){
   if(!leafletMap) initMap();
-  heroContent.classList.add('shrink');
   searchLens.classList.remove('open');
+  document.getElementById('heroSection').classList.add('expanded');
   rotSpeed = 0;
   let scale = 1;
   const expand = setInterval(()=>{
@@ -623,16 +673,23 @@ function goToStation(s){
       backBtn.classList.add('show');
       setTimeout(()=>{
         leafletMap.invalidateSize();
-        leafletMap.flyTo([s.lat, s.lng], 15, {duration:1.4});
+        leafletMap.flyTo([s.lat, s.lng], 16, {duration:1.4});
         if(marker) leafletMap.removeLayer(marker);
         marker = L.circleMarker([s.lat,s.lng], {radius:9, color:teal(), fillColor:teal(), fillOpacity:0.9, weight:2}).addTo(leafletMap);
-        stationInfo.innerHTML = `
-          <div class="name">${s.name}</div>
-          <div class="row"><span>رقم المحطة</span><span>${s.id}</span></div>
-          <div class="row"><span>الإحداثيات</span><span>${s.lat.toFixed(3)}, ${s.lng.toFixed(3)}</span></div>
-          <div class="row"><span>آخر تعديل</span><span>${s.edited}</span></div>
-          <div class="row"><span>بواسطة</span><span>${s.editor}</span></div>`;
-        stationInfo.classList.add('show');
+
+        const mapsUrl = s.googleMapLink || `https://www.google.com/maps?q=${s.lat},${s.lng}`;
+        stationTable.innerHTML = `
+          <div class="st-name">${s.name}</div>
+          <table>
+            <tr><td>رقم المحطة</td><td class="v">${s.id}</td></tr>
+            ${s.region ? `<tr><td>المنطقة</td><td class="v" style="font-family:inherit;direction:rtl">${s.region}</td></tr>` : ''}
+            ${s.feeder ? `<tr><td>المغذي</td><td class="v" style="font-family:inherit;direction:rtl">${s.feeder}</td></tr>` : ''}
+          </table>
+          <div class="st-actions">
+            <a class="st-btn primary" href="${mapsUrl}" target="_blank" rel="noopener">انتقال لقوقل ماب</a>
+            <a class="st-btn" href="auth.html">تعديل</a>
+          </div>`;
+        stationTable.classList.add('show');
       }, 200);
     }
   }, 16);
@@ -640,9 +697,9 @@ function goToStation(s){
 
 backBtn.addEventListener('click', ()=>{
   mapContainer.classList.remove('active');
+  document.getElementById('heroSection').classList.remove('expanded');
   backBtn.classList.remove('show');
-  stationInfo.classList.remove('show');
-  heroContent.classList.remove('shrink');
+  stationTable.classList.remove('show');
   searchInput.value='';
   searchHint.textContent='';
   globeGroup.scale.set(1,1,1);
