@@ -287,6 +287,12 @@ footer{
 </section>
 
 <section class="cards-section">
+  <div style="display:flex;justify-content:center;margin-bottom:10px;width:100%;max-width:760px">
+    <button id="refreshStatsBtn" style="background:transparent;border:none;color:var(--text-secondary);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;font-family:'IBM Plex Sans Arabic',sans-serif" aria-label="تحديث الإحصائيات">
+      <svg id="refreshIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path></svg>
+      تحديث البيانات
+    </button>
+  </div>
   <div class="cards-row">
     <div class="stat-card" data-card="stations">
       <div class="top">
@@ -317,27 +323,59 @@ footer{
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-/* ===== بيانات تجريبية ===== */
-const stations = [
-  {id:"T-014", name:"محطة تحويل الشرفية", lat:21.543, lng:39.172, added:"2026-05-02", edited:"2026-06-18", editor:"عبدالله القحطاني"},
-  {id:"T-027", name:"محطة تحويل النسيم", lat:21.601, lng:39.221, added:"2026-04-11", edited:"2026-06-25", editor:"سارة الحربي"},
-  {id:"D-103", name:"محطة توزيع الروضة", lat:21.512, lng:39.198, added:"2026-03-29", edited:"2026-06-10", editor:"محمد العمري"},
-  {id:"D-088", name:"محطة توزيع السلامة", lat:21.488, lng:39.165, added:"2026-06-01", edited:"2026-06-28", editor:"فهد السلمي"},
-  {id:"١٤", name:"محطة تحويل الشرفية", lat:21.543, lng:39.172, added:"2026-05-02", edited:"2026-06-18", editor:"عبدالله القحطاني"}
-];
-const totalStations = 312, totalAdditions = 47, totalEdits = 183;
-document.getElementById('countStations').textContent = totalStations;
-document.getElementById('countAdditions').textContent = totalAdditions;
-document.getElementById('countEdits').textContent = totalEdits;
-document.getElementById('panelStations').innerHTML = `
-  <div class="stat-panel-row"><span><span class="legend-dot" style="background:var(--teal)"></span>محطات توزيع</span><span class="v">204</span></div>
-  <div class="stat-panel-row"><span><span class="legend-dot" style="background:var(--blue-mid)"></span>محطات تحويل</span><span class="v">108</span></div>`;
-document.getElementById('panelAdditions').innerHTML = `
-  <div class="stat-panel-row"><span>هذا الأسبوع</span><span class="v">9</span></div>
-  <div class="stat-panel-row"><span>آخر إضافة</span><span class="v">2026-06-28</span></div>`;
-document.getElementById('panelEdits').innerHTML = `
-  <div class="stat-panel-row"><span>تعديل إحداثية يدوي</span><span class="v">112</span></div>
-  <div class="stat-panel-row"><span>تجديد عبر GPS</span><span class="v">71</span></div>`;
+const API_URL = 'https://script.google.com/macros/s/AKfycbyxZUSLZNa6UlZLINsfAEe8CmQPoNGJbpnNtUDxP019TfL8uLh_5fuP0e5HE6daP8dh1w/exec';
+async function callBackend(action, payload){
+  const res = await fetch(API_URL, { method:'POST', body: JSON.stringify({ action, ...(payload||{}) }) });
+  return await res.json();
+}
+
+let lastStatsFetch = 0;
+const STATS_STALE_MS = 3 * 60 * 1000; // لا يُعاد الجلب إلا بعد مرور 3 دقائق على آخر تحديث فعلي
+
+async function loadStats(){
+  try{
+    const stats = await callBackend('getStats');
+    lastStatsFetch = Date.now();
+    if(!stats.success) return;
+    document.getElementById('countStations').textContent = stats.totalStations;
+    document.getElementById('countAdditions').textContent = stats.additions;
+    document.getElementById('countEdits').textContent = stats.edits;
+    document.getElementById('panelStations').innerHTML = `
+      <div class="stat-panel-row"><span><span class="legend-dot" style="background:var(--teal)"></span>محطات توزيع</span><span class="v">${stats.distribution}</span></div>
+      <div class="stat-panel-row"><span><span class="legend-dot" style="background:var(--blue-mid)"></span>محطات تحويل</span><span class="v">${stats.substations}</span></div>`;
+    document.getElementById('panelAdditions').innerHTML = `
+      <div class="stat-panel-row"><span>قيد التطوير</span><span class="v">—</span></div>`;
+    document.getElementById('panelEdits').innerHTML = `
+      <div class="stat-panel-row"><span>آخر 30 يومًا</span><span class="v">${stats.edits}</span></div>`;
+  }catch(e){ console.error('فشل تحميل الإحصائيات', e); }
+}
+loadStats();
+
+/* ===== تحديث صامت عند عودة التبويب من حالة الخمول، مو على فترات ثابتة ===== */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible' && (Date.now() - lastStatsFetch) > STATS_STALE_MS){
+    loadStats();
+  }
+});
+window.addEventListener('focus', ()=>{
+  if((Date.now() - lastStatsFetch) > STATS_STALE_MS){
+    loadStats();
+  }
+});
+
+const refreshBtn = document.getElementById('refreshStatsBtn');
+const refreshIcon = document.getElementById('refreshIcon');
+refreshBtn.addEventListener('click', async ()=>{
+  if(refreshBtn.disabled) return;
+  refreshBtn.disabled = true;
+  refreshIcon.style.transition = 'transform .6s linear';
+  refreshIcon.style.transform = 'rotate(360deg)';
+  await loadStats();
+  setTimeout(()=>{
+    refreshIcon.style.transform = 'rotate(0deg)';
+    refreshBtn.disabled = false;
+  }, 600);
+});
 
 document.querySelectorAll('.stat-card').forEach(card=>{
   card.addEventListener('click', ()=>{
@@ -349,12 +387,22 @@ document.querySelectorAll('.stat-card').forEach(card=>{
 
 /* ===== تبديل الثيم ===== */
 const themeToggle = document.getElementById('themeToggle');
-/* ===== حالة تسجيل الدخول بالهيدر ===== */
+/* ===== حالة تسجيل الدخول بالهيدر — جلسة متجددة 4 أيام من آخر نشاط ===== */
+const SESSION_MAX_AGE_MS = 4 * 24 * 60 * 60 * 1000;
 (function(){
   const raw = localStorage.getItem('sec-session');
   if(!raw) return;
   try{
     const session = JSON.parse(raw);
+    const age = Date.now() - (session.ts || 0);
+    if(age > SESSION_MAX_AGE_MS){
+      localStorage.removeItem('sec-session');
+      localStorage.removeItem('sec-phone');
+      return; // الجلسة منتهية، الزر يبقى "تسجيل الدخول" الافتراضي
+    }
+    session.ts = Date.now(); // تجديد النافذة من آخر نشاط فعلي
+    localStorage.setItem('sec-session', JSON.stringify(session));
+
     const loginBtn = document.getElementById('loginBtn');
     if(!loginBtn || !session.name) return;
     loginBtn.textContent = session.name.split(' ')[0];
@@ -495,16 +543,28 @@ function normalizeDigits(str){
   return str.replace(/[٠-٩]/g, d=>arabicIndic.indexOf(d));
 }
 
-searchInput.addEventListener('keydown', (e)=>{
+searchInput.addEventListener('keydown', async (e)=>{
   if(e.key==='Enter'){
     const raw = searchInput.value.trim();
-    const query = normalizeDigits(raw).toUpperCase();
-    const found = stations.find(s=> normalizeDigits(s.id).toUpperCase()===query );
-    if(found){
-      searchHint.textContent = '';
-      goToStation(found);
-    } else {
-      searchHint.textContent = 'رقم المحطة غير موجود، تحقق من الرقم وحاول مجددًا';
+    if(!raw) return;
+    searchHint.textContent = 'جاري البحث...';
+    searchHint.className = 'search-hint';
+    try{
+      const result = await callBackend('searchStation', { query: raw });
+      if(result.found){
+        searchHint.textContent = '';
+        goToStation({
+          id: result.id, name: result.name,
+          lat: result.lat, lng: result.lng,
+          edited: result.editedDate ? new Date(result.editedDate).toLocaleDateString('ar-SA') : '—',
+          editor: result.editor || '—'
+        });
+      } else {
+        searchHint.textContent = 'رقم المحطة غير موجود، تحقق من الرقم وحاول مجددًا';
+        searchHint.className = 'search-hint err';
+      }
+    }catch(err){
+      searchHint.textContent = 'تعذّر الاتصال بالخادم، حاول مرة أخرى';
       searchHint.className = 'search-hint err';
     }
   }
