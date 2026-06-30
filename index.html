@@ -84,8 +84,8 @@ header{
 }
 .globe-stage{
   position:relative;
-  width:min(900px, 94vw);
-  height:min(720px, 80vh);
+  width:min(680px, 92vw);
+  height:min(520px, 60vh);
   overflow:hidden;
   background:transparent;
 }
@@ -198,7 +198,11 @@ h1{
   padding:0 32px 60px;
   display:flex;justify-content:center;
 }
-#cardsSection{display:none;}
+body.guest-mode #cardsSection{display:none;}
+body.guest-mode .globe-stage{width:min(900px,94vw);height:min(720px,80vh);}
+@media (max-width:600px){
+  body.guest-mode .globe-stage{height:min(620px,74vh);}
+}
 .cards-row{
   display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;max-width:760px;width:100%;
   align-items:start;
@@ -253,7 +257,7 @@ footer{
   .login-btn{padding:7px 12px;font-size:12px;}
   .theme-toggle{width:34px;height:34px;}
   .hero{padding-top:100px;}
-  .globe-stage{height:min(620px, 74vh);width:94vw;}
+  .globe-stage{height:min(440px, 50vh);width:92vw;}
   .cards-row{gap:6px;}
   .stat-card{padding:10px 8px;border-right-width:2px;}
   .stat-card .label{font-size:10.5px;line-height:1.3;}
