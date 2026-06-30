@@ -419,6 +419,7 @@ async function startWebAuthnRegistration(phone, displayName){
     activeAbortController = null;
   }
 
+  document.getElementById('fpTitle').textContent = 'جاري التحقق من البصمة...';
   const result = await callBackend('registerCredential', {
     phone,
     credentialId: bufferToB64url(credential.rawId),
@@ -473,6 +474,7 @@ async function startWebAuthnLogin(phone){
     activeAbortController = null;
   }
 
+  document.getElementById('fpTitle').textContent = 'جاري التحقق من البصمة...';
   const result = await callBackend('verifyAssertion', {
     phone,
     credentialId: bufferToB64url(credential.rawId),
