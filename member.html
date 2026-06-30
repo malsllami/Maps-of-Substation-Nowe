@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حسابي | محطات التوزيع</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--blue-deep:#1B4D8C;--blue-mid:#2E7DD1;--teal:#1FAE8C;--teal-light:#4DD6B5;}
+[data-theme="dark"]{--bg:#0A1420;--bg-card:#0D1826;--text-primary:#EAF1F7;--text-secondary:#8FA3B8;--border:rgba(255,255,255,0.08);--border-strong:rgba(255,255,255,0.16);--danger:#E0654F;--danger-bg:rgba(224,101,79,0.1);}
+[data-theme="light"]{--bg:#EAF1F6;--bg-card:#FFFFFF;--text-primary:#102035;--text-secondary:#52647A;--border:rgba(16,32,53,0.10);--border-strong:rgba(16,32,53,0.20);--danger:#C8412C;--danger-bg:rgba(200,65,44,0.08);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh;padding:24px;transition:background .3s,color .3s;}
+.wrap{max-width:480px;margin:0 auto;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.back-link{font-size:13px;color:var(--text-secondary);text-decoration:none;display:flex;align-items:center;gap:6px;}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:16px;}
+.avatar{width:56px;height:56px;border-radius:50%;background:conic-gradient(from 200deg,var(--blue-deep),var(--blue-mid),var(--teal),var(--teal-light),var(--blue-deep));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:20px;margin-bottom:14px;}
+h2{font-size:17px;font-weight:700;margin-bottom:4px;}
+.role-badge{display:inline-block;font-size:11px;color:var(--teal);background:rgba(31,174,140,0.1);padding:3px 10px;border-radius:10px;margin-top:6px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;}
+.input-base{width:100%;height:44px;background:var(--bg);border:1px solid var(--border-strong);border-radius:10px;color:var(--text-primary);font-family:inherit;font-size:14px;padding:0 14px;outline:none;}
+.input-base:disabled{opacity:.55;}
+.input-base:focus{border-color:var(--teal);}
+.meta-row{display:flex;justify-content:space-between;font-size:12.5px;padding:8px 0;border-top:1px solid var(--border);color:var(--text-secondary);}
+.meta-row span:last-child{color:var(--text-primary);font-family:'JetBrains Mono',monospace;}
+.error-banner{background:var(--danger-bg);color:var(--danger);font-size:12.5px;padding:10px 12px;border-radius:8px;margin-bottom:14px;display:none;}
+.error-banner.show{display:block;}
+.success-banner{background:rgba(31,174,140,0.12);color:var(--teal);font-size:12.5px;padding:10px 12px;border-radius:8px;margin-bottom:14px;display:none;}
+.success-banner.show{display:block;}
+.btn-progress{position:relative;width:100%;height:46px;border-radius:10px;border:none;background:var(--teal);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;overflow:hidden;}
+.btn-progress:disabled{cursor:not-allowed;}
+.btn-progress .label{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:8px;height:100%;}
+.btn-progress .fill{position:absolute;inset:0;width:0%;background:rgba(255,255,255,0.28);transition:width .25s linear;z-index:1;}
+.btn-progress.error{background:var(--danger);}
+.btn-progress .pct{font-family:'JetBrains Mono',monospace;font-size:13px;display:none;}
+</style>
+</head>
+<body data-theme="dark" id="bodyEl">
+<script>
+(function(){
+  var saved = localStorage.getItem('sec-theme');
+  if(saved==='light'||saved==='dark') document.getElementById('bodyEl').setAttribute('data-theme', saved);
+  var session = localStorage.getItem('sec-session');
+  if(!session){ location.href = 'auth.html'; }
+})();
+</script>
+
+<div class="wrap">
+  <div class="topbar">
+    <a href="index.html" class="back-link">→ رجوع للصفحة الرئيسية</a>
+  </div>
+
+  <div class="card" id="profileCard">
+    <div class="avatar" id="avatarInitial">-</div>
+    <h2 id="profileName">...</h2>
+    <div style="font-size:12.5px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;direction:ltr;text-align:right" id="profilePhone">-</div>
+    <span class="role-badge" id="memberTypeBadge"></span>
+
+    <div class="meta-row">
+      <span>آخر دخول ناجح</span>
+      <span id="lastLoginVal">—</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="errorBanner" class="error-banner"></div>
+    <div id="successBanner" class="success-banner">تم حفظ التعديلات بنجاح</div>
+
+    <div class="field">
+      <label>الاسم الكامل</label>
+      <input type="text" class="input-base" id="nameInput">
+    </div>
+    <div class="field">
+      <label>رقم الجوال (غير قابل للتعديل)</label>
+      <input type="text" class="input-base" id="phoneInput" disabled dir="ltr">
+    </div>
+    <div class="field">
+      <label>الإيميل (اختياري)</label>
+      <input type="email" class="input-base" id="emailInput" dir="ltr">
+    </div>
+
+    <button class="btn-progress" id="saveBtn">
+      <span class="label"><span id="saveLabel">حفظ التعديلات</span><span class="pct" id="savePct"></span></span>
+      <span class="fill" id="saveFill"></span>
+    </button>
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbyxZUSLZNa6UlZLINsfAEe8CmQPoNGJbpnNtUDxP019TfL8uLh_5fuP0e5HE6daP8dh1w/exec';
+async function callBackend(action, payload){
+  const res = await fetch(API_URL, {method:'POST', body: JSON.stringify({action, ...(payload||{})})});
+  return await res.json();
+}
+
+const session = JSON.parse(localStorage.getItem('sec-session') || '{}');
+const phone = session.phone;
+
+function showError(msg){ const el=document.getElementById('errorBanner'); el.textContent=msg; el.classList.add('show'); document.getElementById('successBanner').classList.remove('show'); }
+function hideMsgs(){ document.getElementById('errorBanner').classList.remove('show'); document.getElementById('successBanner').classList.remove('show'); }
+
+async function loadProfile(){
+  const res = await callBackend('getMemberProfile', {phone});
+  if(!res.success){ showError(res.error || 'تعذّر تحميل البيانات'); return; }
+  document.getElementById('profileName').textContent = res.name;
+  document.getElementById('profilePhone').textContent = res.phone;
+  document.getElementById('avatarInitial').textContent = res.name.trim()[0] || '؟';
+  document.getElementById('memberTypeBadge').textContent = res.memberType || 'عضو';
+  document.getElementById('nameInput').value = res.name;
+  document.getElementById('phoneInput').value = res.phone;
+  document.getElementById('emailInput').value = res.email || '';
+  document.getElementById('lastLoginVal').textContent = res.lastLogin ? new Date(res.lastLogin).toLocaleString('ar-SA') : 'أول دخول';
+}
+loadProfile();
+
+const saveBtn = document.getElementById('saveBtn');
+const saveLabel = document.getElementById('saveLabel');
+const savePct = document.getElementById('savePct');
+const saveFill = document.getElementById('saveFill');
+let savingNow = false;
+
+saveBtn.addEventListener('click', async ()=>{
+  if(savingNow) return;
+  hideMsgs();
+  const name = document.getElementById('nameInput').value.trim();
+  if(name.length < 2){ showError('الرجاء إدخال الاسم الكامل'); return; }
+
+  savingNow = true;
+  saveBtn.disabled = true;
+  saveLabel.style.display='none'; savePct.style.display='inline';
+  let p = 0;
+  const tick = setInterval(()=>{ p=Math.min(p+Math.random()*15,92); saveFill.style.width=p+'%'; savePct.textContent=Math.round(p)+'%'; },120);
+
+  try{
+    const res = await callBackend('updateMemberProfile', {phone, name, email: document.getElementById('emailInput').value.trim()});
+    clearInterval(tick);
+    saveFill.style.width='100%'; savePct.textContent='100%';
+    if(!res.success) throw new Error(res.error || 'فشل الحفظ');
+    document.getElementById('successBanner').classList.add('show');
+    session.name = name; localStorage.setItem('sec-session', JSON.stringify(session));
+  }catch(err){
+    saveBtn.classList.add('error');
+    showError(err.message);
+  }finally{
+    setTimeout(()=>{
+      savingNow=false; saveBtn.disabled=false; saveBtn.classList.remove('error');
+      saveLabel.style.display='inline'; savePct.style.display='none'; saveFill.style.width='0%';
+    }, 500);
+  }
+});
+</script>
+</body>
+</html>
