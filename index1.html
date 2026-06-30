@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محطات التوزيع | الشركة السعودية للطاقة</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --blue-deep:#1B4D8C;
+  --blue-mid:#2E7DD1;
+  --teal:#1FAE8C;
+  --teal-light:#4DD6B5;
+}
+[data-theme="dark"]{
+  --bg:#0A1420;
+  --bg-elev:#101D2E;
+  --bg-card:#0D1826;
+  --text-primary:#EAF1F7;
+  --text-secondary:#8FA3B8;
+  --border:rgba(255,255,255,0.08);
+  --border-strong:rgba(255,255,255,0.16);
+  --globe-line:rgba(77,214,181,0.35);
+  --globe-point:#4DD6B5;
+}
+[data-theme="light"]{
+  --bg:#F4F8FB;
+  --bg-elev:#FFFFFF;
+  --bg-card:#FFFFFF;
+  --text-primary:#102035;
+  --text-secondary:#52647A;
+  --border:rgba(16,32,53,0.10);
+  --border-strong:rgba(16,32,53,0.20);
+  --globe-line:rgba(27,77,140,0.35);
+  --globe-point:#1FAE8C;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+  background:var(--bg);
+  color:var(--text-primary);
+  overflow-x:hidden;
+  transition:background .4s ease,color .4s ease;
+}
+header{
+  position:fixed;top:0;right:0;left:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 32px;
+  background:linear-gradient(to bottom, var(--bg) 60%, transparent);
+}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-mark{
+  width:30px;height:30px;border-radius:50%;
+  background:conic-gradient(from 200deg, var(--blue-deep), var(--blue-mid), var(--teal), var(--teal-light), var(--blue-deep));
+}
+.logo-text{font-size:15px;font-weight:700;letter-spacing:.3px;}
+.logo-sub{font-size:11px;color:var(--text-secondary);margin-top:1px;}
+.theme-toggle{
+  width:40px;height:40px;border-radius:50%;
+  border:1px solid var(--border-strong);
+  background:var(--bg-elev);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text-primary);
+  transition:border-color .2s;
+}
+.theme-toggle:hover{border-color:var(--teal);}
+.hero{
+  position:relative;
+  height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:80px 20px 0;
+}
+#globe-canvas{position:absolute;inset:0;width:100%;height:100%;}
+#map-container{
+  position:absolute;inset:0;width:100%;height:100%;
+  opacity:0;pointer-events:none;
+  transition:opacity .9s ease;
+}
+#map-container.active{opacity:1;pointer-events:auto;}
+.hero-content{
+  position:relative;z-index:5;
+  display:flex;flex-direction:column;align-items:center;
+  pointer-events:none;
+}
+.hero-content.shrink{transform:translateY(-30vh);transition:transform .8s cubic-bezier(.25,.8,.3,1);}
+.eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;letter-spacing:2px;color:var(--teal);
+  margin-bottom:14px;text-transform:uppercase;
+}
+h1{
+  font-size:clamp(28px,4vw,46px);
+  font-weight:700;
+  text-align:center;
+  line-height:1.3;
+  margin-bottom:8px;
+}
+.h1-accent{
+  background:linear-gradient(90deg, var(--blue-mid), var(--teal));
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.subtitle{
+  color:var(--text-secondary);
+  font-size:15px;text-align:center;max-width:520px;
+  margin-bottom:36px;
+}
+.search-wrap{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.search-lens{
+  width:54px;height:54px;border-radius:50%;
+  background:var(--bg-card);
+  border:1.5px solid var(--border-strong);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:width .45s cubic-bezier(.25,.8,.3,1),border-radius .45s,background .3s;
+  overflow:hidden;
+}
+.search-lens svg{flex-shrink:0;width:20px;height:20px;stroke:var(--text-primary);}
+.search-lens.open{
+  width:340px;border-radius:27px;
+  background:var(--bg-card);
+  border-color:var(--teal);
+  justify-content:flex-start;padding:0 18px;gap:10px;
+}
+.search-lens input{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:14px;
+  direction:ltr;text-align:right;
+}
+.search-lens input::placeholder{color:var(--text-secondary);font-family:'IBM Plex Sans Arabic',sans-serif;}
+.search-hint{font-size:12px;color:var(--text-secondary);min-height:16px;}
+.search-hint.err{color:#E0654F;}
+.search-hint.ok{color:var(--teal);}
+.back-btn{
+  pointer-events:auto;
+  position:absolute;top:90px;display:none;
+  align-items:center;gap:6px;
+  font-size:13px;color:var(--text-secondary);
+  background:var(--bg-card);border:1px solid var(--border);
+  padding:8px 16px;border-radius:20px;cursor:pointer;z-index:6;
+}
+.back-btn.show{display:flex;}
+.station-info{
+  position:absolute;bottom:140px;z-index:6;
+  background:var(--bg-card);border:1px solid var(--border-strong);
+  border-radius:14px;padding:16px 20px;
+  display:none;min-width:260px;
+  box-shadow:0 8px 30px rgba(0,0,0,.25);
+}
+.station-info.show{display:block;}
+.station-info .name{font-weight:700;font-size:15px;margin-bottom:6px;}
+.station-info .row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);padding:3px 0;}
+.station-info .row span:last-child{color:var(--text-primary);font-family:'JetBrains Mono',monospace;direction:ltr;}
+.cards-section{
+  position:relative;z-index:5;
+  padding:0 32px 60px;
+  display:flex;justify-content:center;
+}
+.cards-row{
+  display:flex;gap:14px;max-width:760px;width:100%;
+  flex-wrap:wrap;justify-content:center;
+}
+.stat-card{
+  flex:1;min-width:200px;
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:4px;
+  border-right:3px solid var(--teal);
+  padding:18px 20px;
+  cursor:pointer;
+  transition:border-color .2s, transform .2s;
+}
+.stat-card:nth-child(2){border-right-color:var(--blue-mid);}
+.stat-card:nth-child(3){border-right-color:#C8A24E;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-card .top{display:flex;justify-content:space-between;align-items:flex-start;}
+.stat-card .num{
+  font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:700;
+  direction:ltr;display:block;text-align:right;
+}
+.stat-card .label{font-size:13px;color:var(--text-secondary);margin-top:4px;}
+.stat-card .chev{color:var(--text-secondary);transition:transform .3s;font-size:14px;}
+.stat-card.expanded .chev{transform:rotate(180deg);}
+.stat-panel{
+  max-height:0;overflow:hidden;
+  transition:max-height .45s cubic-bezier(.25,.8,.3,1), margin-top .45s;
+}
+.stat-card.expanded .stat-panel{max-height:160px;margin-top:14px;}
+.stat-panel-inner{border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px;}
+.stat-panel-row{display:flex;justify-content:space-between;font-size:12.5px;}
+.stat-panel-row .v{font-family:'JetBrains Mono',monospace;color:var(--teal);direction:ltr;}
+.legend-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-left:6px;}
+footer{
+  text-align:center;padding:24px;font-size:11px;color:var(--text-secondary);
+  border-top:1px solid var(--border);
+}
+@media (max-width:600px){
+  .search-lens.open{width:88vw;}
+  header{padding:14px 18px;}
+}
+</style>
+</head>
+<body data-theme="dark" id="bodyEl">
+<script>
+(function(){
+  var saved = localStorage.getItem('sec-theme');
+  if(saved === 'light' || saved === 'dark'){
+    document.getElementById('bodyEl').setAttribute('data-theme', saved);
+  }
+})();
+</script>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark"></div>
+    <div>
+      <div class="logo-text">الشركة السعودية للطاقة</div>
+      <div class="logo-sub">محطات التوزيع — منصة الإحداثيات</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <a href="auth.html" style="text-decoration:none;font-size:13px;color:var(--text-primary);background:var(--bg-card);border:1px solid var(--border-strong);padding:9px 18px;border-radius:8px;transition:border-color .2s" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--border-strong)'">تسجيل الدخول</a>
+    <div class="theme-toggle" id="themeToggle" aria-label="تبديل الوضع الداكن والفاتح">
+      <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"></line><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"></line></svg>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <canvas id="globe-canvas"></canvas>
+  <div id="map-container"></div>
+
+  <div class="back-btn" id="backBtn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    رجوع للبحث
+  </div>
+
+  <div class="station-info" id="stationInfo"></div>
+
+  <div class="hero-content" id="heroContent">
+    <div class="eyebrow">SEC // DISTRIBUTION NETWORK</div>
+    <h1>ابحث عن <span class="h1-accent">إحداثيات</span> محطتك</h1>
+    <p class="subtitle">أدخل رقم محطة التوزيع أو محطة التحويل لعرض موقعها بدقة على الخريطة</p>
+    <div class="search-wrap">
+      <div class="search-lens" id="searchLens">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input id="searchInput" type="text" placeholder="مثال: T-014 أو ١٤" inputmode="text">
+      </div>
+      <div class="search-hint" id="searchHint"></div>
+    </div>
+  </div>
+</section>
+
+<section class="cards-section">
+  <div class="cards-row">
+    <div class="stat-card" data-card="stations">
+      <div class="top">
+        <div><span class="num" id="countStations">0</span><div class="label">إجمالي المحطات</div></div>
+        <span class="chev">▾</span>
+      </div>
+      <div class="stat-panel"><div class="stat-panel-inner" id="panelStations"></div></div>
+    </div>
+    <div class="stat-card" data-card="additions">
+      <div class="top">
+        <div><span class="num" id="countAdditions">0</span><div class="label">إضافات هذا الشهر</div></div>
+        <span class="chev">▾</span>
+      </div>
+      <div class="stat-panel"><div class="stat-panel-inner" id="panelAdditions"></div></div>
+    </div>
+    <div class="stat-card" data-card="edits">
+      <div class="top">
+        <div><span class="num" id="countEdits">0</span><div class="label">تعديلات هذا الشهر</div></div>
+        <span class="chev">▾</span>
+      </div>
+      <div class="stat-panel"><div class="stat-panel-inner" id="panelEdits"></div></div>
+    </div>
+  </div>
+</section>
+
+<footer>معاينة Phase 1 — بيانات تجريبية لأغراض التصميم فقط</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ===== بيانات تجريبية ===== */
+const stations = [
+  {id:"T-014", name:"محطة تحويل الشرفية", lat:21.543, lng:39.172, added:"2026-05-02", edited:"2026-06-18", editor:"عبدالله القحطاني"},
+  {id:"T-027", name:"محطة تحويل النسيم", lat:21.601, lng:39.221, added:"2026-04-11", edited:"2026-06-25", editor:"سارة الحربي"},
+  {id:"D-103", name:"محطة توزيع الروضة", lat:21.512, lng:39.198, added:"2026-03-29", edited:"2026-06-10", editor:"محمد العمري"},
+  {id:"D-088", name:"محطة توزيع السلامة", lat:21.488, lng:39.165, added:"2026-06-01", edited:"2026-06-28", editor:"فهد السلمي"},
+  {id:"١٤", name:"محطة تحويل الشرفية", lat:21.543, lng:39.172, added:"2026-05-02", edited:"2026-06-18", editor:"عبدالله القحطاني"}
+];
+const totalStations = 312, totalAdditions = 47, totalEdits = 183;
+document.getElementById('countStations').textContent = totalStations;
+document.getElementById('countAdditions').textContent = totalAdditions;
+document.getElementById('countEdits').textContent = totalEdits;
+document.getElementById('panelStations').innerHTML = `
+  <div class="stat-panel-row"><span><span class="legend-dot" style="background:var(--teal)"></span>محطات توزيع</span><span class="v">204</span></div>
+  <div class="stat-panel-row"><span><span class="legend-dot" style="background:var(--blue-mid)"></span>محطات تحويل</span><span class="v">108</span></div>`;
+document.getElementById('panelAdditions').innerHTML = `
+  <div class="stat-panel-row"><span>هذا الأسبوع</span><span class="v">9</span></div>
+  <div class="stat-panel-row"><span>آخر إضافة</span><span class="v">2026-06-28</span></div>`;
+document.getElementById('panelEdits').innerHTML = `
+  <div class="stat-panel-row"><span>تعديل إحداثية يدوي</span><span class="v">112</span></div>
+  <div class="stat-panel-row"><span>تجديد عبر GPS</span><span class="v">71</span></div>`;
+
+document.querySelectorAll('.stat-card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    const wasOpen = card.classList.contains('expanded');
+    document.querySelectorAll('.stat-card').forEach(c=>c.classList.remove('expanded'));
+    if(!wasOpen) card.classList.add('expanded');
+  });
+});
+
+/* ===== تبديل الثيم ===== */
+const themeToggle = document.getElementById('themeToggle');
+themeToggle.addEventListener('click', ()=>{
+  const cur = document.body.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.body.setAttribute('data-theme', next);
+  localStorage.setItem('sec-theme', next);
+  updateGlobeColors();
+  if(currentTileLayer) swapTiles(next);
+});
+
+/* ===== الكرة الأرضية Three.js ===== */
+const canvas = document.getElementById('globe-canvas');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+camera.position.z = 4.4;
+const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+
+const globeGroup = new THREE.Group();
+scene.add(globeGroup);
+
+const wireGeo = new THREE.IcosahedronGeometry(1.5, 3);
+const wireMat = new THREE.MeshBasicMaterial({color:0x4DD6B5, wireframe:true, transparent:true, opacity:0.18});
+const wireSphere = new THREE.Mesh(wireGeo, wireMat);
+globeGroup.add(wireSphere);
+
+const ringGeo = new THREE.SphereGeometry(1.5, 24, 24);
+const ringMat = new THREE.MeshBasicMaterial({color:0x2E7DD1, wireframe:true, transparent:true, opacity:0.10});
+globeGroup.add(new THREE.Mesh(ringGeo, ringMat));
+
+function latLngToVec3(lat, lng, radius){
+  const phi = (90-lat)*(Math.PI/180);
+  const theta = (lng+180)*(Math.PI/180);
+  return new THREE.Vector3(
+    -radius*Math.sin(phi)*Math.cos(theta),
+    radius*Math.cos(phi),
+    radius*Math.sin(phi)*Math.sin(theta)
+  );
+}
+
+const demoPoints = [];
+for(let i=0;i<46;i++){
+  demoPoints.push({lat:(Math.random()*160)-80, lng:(Math.random()*360)-180});
+}
+const pointsGroup = new THREE.Group();
+const pointGeo = new THREE.SphereGeometry(0.022, 8, 8);
+let pointMat = new THREE.MeshBasicMaterial({color:0x4DD6B5});
+demoPoints.forEach(p=>{
+  const m = new THREE.Mesh(pointGeo, pointMat);
+  const v = latLngToVec3(p.lat, p.lng, 1.52);
+  m.position.copy(v);
+  pointsGroup.add(m);
+});
+globeGroup.add(pointsGroup);
+
+function updateGlobeColors(){
+  const dark = document.body.getAttribute('data-theme')==='dark';
+  wireMat.color.set(dark?0x4DD6B5:0x1FAE8C);
+  ringMat.color.set(dark?0x2E7DD1:0x1B4D8C);
+  pointMat.color.set(dark?0x4DD6B5:0x1FAE8C);
+}
+updateGlobeColors();
+
+let rotSpeed = 0.0016;
+function animate(){
+  requestAnimationFrame(animate);
+  globeGroup.rotation.y += rotSpeed;
+  globeGroup.rotation.x = 0.15;
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', ()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* ===== البحث + الخريطة ===== */
+const searchLens = document.getElementById('searchLens');
+const searchInput = document.getElementById('searchInput');
+const searchHint = document.getElementById('searchHint');
+const heroContent = document.getElementById('heroContent');
+const mapContainer = document.getElementById('map-container');
+const backBtn = document.getElementById('backBtn');
+const stationInfo = document.getElementById('stationInfo');
+
+searchLens.addEventListener('click', (e)=>{
+  if(!searchLens.classList.contains('open')){
+    searchLens.classList.add('open');
+    setTimeout(()=>searchInput.focus(), 200);
+  }
+});
+document.addEventListener('click', (e)=>{
+  if(!searchLens.contains(e.target) && searchInput.value==='' && !mapContainer.classList.contains('active')){
+    searchLens.classList.remove('open');
+  }
+});
+
+function normalizeDigits(str){
+  const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+  return str.replace(/[٠-٩]/g, d=>arabicIndic.indexOf(d));
+}
+
+searchInput.addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){
+    const raw = searchInput.value.trim();
+    const query = normalizeDigits(raw).toUpperCase();
+    const found = stations.find(s=> normalizeDigits(s.id).toUpperCase()===query );
+    if(found){
+      searchHint.textContent = '';
+      goToStation(found);
+    } else {
+      searchHint.textContent = 'رقم المحطة غير موجود، تحقق من الرقم وحاول مجددًا';
+      searchHint.className = 'search-hint err';
+    }
+  }
+});
+
+let leafletMap = null, currentTileLayer = null, marker = null;
+const tileURLs = {
+  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+};
+
+function initMap(){
+  leafletMap = L.map('map-container', {zoomControl:false, attributionControl:false}).setView([21.54,39.19], 12);
+  const theme = document.body.getAttribute('data-theme');
+  currentTileLayer = L.tileLayer(tileURLs[theme], {subdomains:'abcd', maxZoom:19}).addTo(leafletMap);
+  L.control.zoom({position:'bottomleft'}).addTo(leafletMap);
+}
+
+function swapTiles(theme){
+  if(currentTileLayer) leafletMap.removeLayer(currentTileLayer);
+  currentTileLayer = L.tileLayer(tileURLs[theme], {subdomains:'abcd', maxZoom:19}).addTo(leafletMap);
+}
+
+const teal = ()=> document.body.getAttribute('data-theme')==='dark' ? '#4DD6B5':'#1FAE8C';
+
+function goToStation(s){
+  if(!leafletMap) initMap();
+  heroContent.classList.add('shrink');
+  searchLens.classList.remove('open');
+  rotSpeed = 0;
+  let scale = 1;
+  const expand = setInterval(()=>{
+    scale += 0.06;
+    globeGroup.scale.set(scale,scale,scale);
+    wireMat.opacity = Math.max(0, 0.18-(scale-1)*0.1);
+    ringMat.opacity = Math.max(0, 0.10-(scale-1)*0.06);
+    if(scale>2.4){
+      clearInterval(expand);
+      mapContainer.classList.add('active');
+      backBtn.classList.add('show');
+      setTimeout(()=>{
+        leafletMap.invalidateSize();
+        leafletMap.flyTo([s.lat, s.lng], 15, {duration:1.4});
+        if(marker) leafletMap.removeLayer(marker);
+        marker = L.circleMarker([s.lat,s.lng], {radius:9, color:teal(), fillColor:teal(), fillOpacity:0.9, weight:2}).addTo(leafletMap);
+        stationInfo.innerHTML = `
+          <div class="name">${s.name}</div>
+          <div class="row"><span>رقم المحطة</span><span>${s.id}</span></div>
+          <div class="row"><span>الإحداثيات</span><span>${s.lat.toFixed(3)}, ${s.lng.toFixed(3)}</span></div>
+          <div class="row"><span>آخر تعديل</span><span>${s.edited}</span></div>
+          <div class="row"><span>بواسطة</span><span>${s.editor}</span></div>`;
+        stationInfo.classList.add('show');
+      }, 200);
+    }
+  }, 16);
+}
+
+backBtn.addEventListener('click', ()=>{
+  mapContainer.classList.remove('active');
+  backBtn.classList.remove('show');
+  stationInfo.classList.remove('show');
+  heroContent.classList.remove('shrink');
+  searchInput.value='';
+  searchHint.textContent='';
+  globeGroup.scale.set(1,1,1);
+  wireMat.opacity = 0.18;
+  ringMat.opacity = 0.10;
+  rotSpeed = 0.0016;
+});
+</script>
+</body>
+</html>
