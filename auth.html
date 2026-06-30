@@ -93,11 +93,21 @@ h2{font-size:18px; font-weight:700; margin-bottom:6px;}
 .fingerprint-step{display:none; text-align:center; padding:20px 0;}
 .fingerprint-step.show{display:block;}
 .fp-icon{
-  width:64px; height:64px; border-radius:50%; border:2px solid var(--teal);
-  display:flex; align-items:center; justify-content:center; margin:0 auto 16px;
+  width:96px; height:96px; border-radius:50%;
+  background: radial-gradient(circle at 35% 30%, var(--bg-elev), var(--bg-card) 70%);
+  box-shadow:
+    inset 0 0 0 7px var(--teal),
+    inset 0 -2px 6px rgba(0,0,0,0.25),
+    0 8px 22px rgba(31,174,140,0.35),
+    0 2px 8px rgba(0,0,0,0.2);
+  display:flex; align-items:center; justify-content:center; margin:0 auto 18px;
   animation:pulse 1.6s ease-in-out infinite;
 }
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(31,174,140,.3);}50%{box-shadow:0 0 0 10px rgba(31,174,140,0);}}
+.fp-icon svg{stroke:var(--text-primary); opacity:0.85;}
+@keyframes pulse{0%,100%{box-shadow:inset 0 0 0 7px var(--teal), inset 0 -2px 6px rgba(0,0,0,0.25), 0 8px 22px rgba(31,174,140,0.35), 0 0 0 0 rgba(31,174,140,.35);}50%{box-shadow:inset 0 0 0 7px var(--teal), inset 0 -2px 6px rgba(0,0,0,0.25), 0 8px 22px rgba(31,174,140,0.35), 0 0 0 12px rgba(31,174,140,0);}}
+.fp-icon.verifying{animation:pulse-fast 0.9s ease-in-out infinite;}
+.fp-icon.verifying svg{opacity:1;}
+@keyframes pulse-fast{0%,100%{box-shadow:inset 0 0 0 7px var(--blue-mid), inset 0 -2px 6px rgba(0,0,0,0.25), 0 8px 22px rgba(46,125,209,0.45), 0 0 0 0 rgba(46,125,209,.4);}50%{box-shadow:inset 0 0 0 7px var(--blue-mid), inset 0 -2px 6px rgba(0,0,0,0.25), 0 8px 22px rgba(46,125,209,0.45), 0 0 0 14px rgba(46,125,209,0);}}
 .field-disabled{opacity:.5; pointer-events:none;}
 .switch-link{text-align:center; margin-top:18px; font-size:13px; color:var(--text-secondary);}
 .switch-link a{color:var(--teal); cursor:pointer; text-decoration:none; font-weight:500;}
@@ -165,7 +175,15 @@ h2{font-size:18px; font-weight:700; margin-bottom:6px;}
   <!-- ===== خطوة البصمة ===== -->
   <div class="fingerprint-step" id="fingerprintStep">
     <div class="fp-icon">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1FAE8C" stroke-width="1.6"><path d="M12 11c1 0 2 .5 2 2v3M8 12v3a4 4 0 0 0 8 0v-3a4 4 0 0 0-4-4 1 1 0 0 0-1 1"/><path d="M5 12a7 7 0 0 1 14 0v2"/><path d="M2.5 13a9.5 9.5 0 0 1 19 0"/></svg>
+      <svg width="46" height="46" viewBox="0 0 100 100" fill="none" stroke-linecap="round">
+        <path d="M50 28c-13 0-22 9-22 22v8" stroke-width="3.2"/>
+        <path d="M50 22c-17 0-29 12-29 28v9" stroke-width="3.2"/>
+        <path d="M50 35c-9 0-15 6-15 15v10c0 4 1 7 3 10" stroke-width="3.2"/>
+        <path d="M50 42c-5 0-8 3-8 8v9c0 6 2 11 6 15" stroke-width="3.2"/>
+        <path d="M50 49c-1.5 0-2 1-2 2v8c0 9 4 16 11 21" stroke-width="3.2"/>
+        <path d="M65 47v10c0 12-6 21-16 27" stroke-width="3.2"/>
+        <path d="M71 44v12c0 16-9 28-23 35" stroke-width="3.2"/>
+      </svg>
     </div>
     <p style="font-size:14px; font-weight:500; margin-bottom:6px;" id="fpTitle">استخدم بصمتك للمتابعة</p>
     <p style="font-size:12.5px; color:var(--text-secondary)">سيطلب جهازك التحقق ببصمة الإصبع أو الوجه</p>
@@ -356,17 +374,27 @@ mainBtn.addEventListener('click', async ()=>{
 
   try{
     await progressBtn.run(async ()=>{
+      let result;
       if(mode==='login'){
-        return startWebAuthnLogin(phone);
+        result = await startWebAuthnLogin(phone);
       } else {
         const name = document.getElementById('nameInput').value.trim();
         const email = document.getElementById('emailInput').value.trim();
         const reg = await callBackend('registerUser', {name, phone, email});
         if(!reg.success) throw new Error(reg.error || 'تعذّر إنشاء الحساب');
-        return startWebAuthnRegistration(phone, name);
+        result = await startWebAuthnRegistration(phone, name);
       }
+      if(result && result.success){
+        await new Promise(r=>setTimeout(r, 700)); // وقت كافٍ لقراءة رسالة "تم بنجاح"
+        window.location.href = 'index.html';
+      }
+      return result;
     });
-  }catch(e){ /* الخطأ ظاهر بالفعل بالبانر */ }
+  }catch(e){
+    document.getElementById('fingerprintStep').classList.remove('show');
+    document.querySelector('.fp-icon').classList.remove('verifying');
+    document.getElementById('phoneStep').style.display='block';
+  }
 });
 
 /* ============================================================
@@ -420,6 +448,7 @@ async function startWebAuthnRegistration(phone, displayName){
   }
 
   document.getElementById('fpTitle').textContent = 'جاري التحقق من البصمة...';
+  document.querySelector('.fp-icon').classList.add('verifying');
   const result = await callBackend('registerCredential', {
     phone,
     credentialId: bufferToB64url(credential.rawId),
@@ -475,6 +504,7 @@ async function startWebAuthnLogin(phone){
   }
 
   document.getElementById('fpTitle').textContent = 'جاري التحقق من البصمة...';
+  document.querySelector('.fp-icon').classList.add('verifying');
   const result = await callBackend('verifyAssertion', {
     phone,
     credentialId: bufferToB64url(credential.rawId),
