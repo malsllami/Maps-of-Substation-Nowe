@@ -543,10 +543,26 @@ function normalizeDigits(str){
   return str.replace(/[٠-٩]/g, d=>arabicIndic.indexOf(d));
 }
 
+function hasValidSession(){
+  const raw = localStorage.getItem('sec-session');
+  if(!raw) return false;
+  try{
+    const session = JSON.parse(raw);
+    return (Date.now() - (session.ts || 0)) <= SESSION_MAX_AGE_MS;
+  }catch(e){ return false; }
+}
+
 searchInput.addEventListener('keydown', async (e)=>{
   if(e.key==='Enter'){
     const raw = searchInput.value.trim();
     if(!raw) return;
+
+    if(!hasValidSession()){
+      searchHint.innerHTML = 'سجّل دخول للحصول على النتيجة — <a href="auth.html" style="color:var(--teal);font-weight:500;text-decoration:underline">تسجيل الدخول</a>';
+      searchHint.className = 'search-hint err';
+      return;
+    }
+
     searchHint.textContent = 'جاري البحث...';
     searchHint.className = 'search-hint';
     try{
