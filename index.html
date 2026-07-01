@@ -1052,21 +1052,25 @@ async function fetchOsrmRoute(mySeq){
   lastOsrmCallAt = Date.now();
   const coordsStr = routePoints.map(p => `${p.lng},${p.lat}`).join(';');
   try{
-    const res = await fetch(`${OSRM_URL}${coordsStr}?overview=full&geometries=geojson`);
+    const res = await fetch(`${OSRM_URL}${coordsStr}?overview=full&geometries=geojson&alternatives=true`);
     if(mySeq !== osrmSeq) return;
     if(!res.ok) throw new Error('osrm-http-error');
     const data = await res.json();
     if(mySeq !== osrmSeq) return;
     if(data.code !== 'Ok' || !data.routes || !data.routes[0]) throw new Error('osrm-no-route');
 
-    const route = data.routes[0];
+    // لو OSRM رجّع أكثر من مسار، نختار الأقصر مسافةً تلقائياً بدل الاعتماد على المسار الافتراضي فقط
+    const route = data.routes.reduce((shortest, r) => r.distance < shortest.distance ? r : shortest, data.routes[0]);
+    const hadAlternatives = data.routes.length > 1;
+
     const latlngs = route.geometry.coordinates.map(([lng,lat]) => [lat,lng]);
     if(routeLine) leafletMap.removeLayer(routeLine);
     routeLine = L.polyline(latlngs, {color:'#C8A24E', weight:4}).addTo(leafletMap);
 
     const km = (route.distance/1000).toFixed(2);
     const mins = Math.round(route.duration/60);
-    mapToolHint.innerHTML = `مسار شارع حقيقي — ${routePoints.length} نقاط — ${km} كم — ~${mins} دقيقة <span style="opacity:.6">(OSRM · © OpenStreetMap)</span>`;
+    const altNote = hadAlternatives ? ` <span style="opacity:.6">(أقصر ${data.routes.length} بدائل متاحة)</span>` : '';
+    mapToolHint.innerHTML = `مسار شارع حقيقي — ${routePoints.length} نقاط — ${km} كم — ~${mins} دقيقة${altNote} <span style="opacity:.6">(OSRM · © OpenStreetMap)</span>`;
   }catch(err){
     if(mySeq !== osrmSeq) return;
     // فشل جلب مسار الشارع (تعذّر الاتصال أو تجاوز حد الطلبات) — نبقى على الخط المباشر بدون كسر الأداة
