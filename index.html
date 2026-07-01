@@ -174,7 +174,7 @@ header{
 .hero-content{
   position:absolute;inset:0;z-index:5;
   display:flex;flex-direction:column;align-items:center;
-  padding:12% 30px 0;
+  padding:24% 30px 0;
   pointer-events:none;
   transition:opacity .4s ease;
 }
@@ -220,37 +220,28 @@ h1{
   -webkit-text-fill-color:transparent;
   text-shadow:none;
 }
-.subtitle{
-  width:min(480px,84%);
-  color:#fff;
-  background:rgba(5,15,25,0.45);
-  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
-  border-radius:14px;padding:9px 18px;
-  font-size:13.5px;font-weight:500;text-align:center;line-height:1.55;
-  text-shadow:0 1px 4px rgba(0,0,0,0.5);
-  margin:0;
-}
-[data-theme="light"] .subtitle{
-  color:var(--text-primary);
-  background:rgba(255,255,255,0.65);
-  text-shadow:none;
-}
 .search-wrap{
   width:100%;
-  margin-top:24px;
+  margin-top:56px;
   pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:10px;
 }
 .search-lens{
-  width:58px;height:58px;border-radius:50%;
-  background:transparent;
-  border:none;
+  width:72px;height:72px;border-radius:50%;
+  background:rgba(5,15,25,0.6);
+  border:1.5px solid rgba(77,214,181,0.55);
   display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:width .45s cubic-bezier(.25,.8,.3,1),border-radius .45s,background .3s,border-color .3s;
+  cursor:pointer;transition:width .45s cubic-bezier(.25,.8,.3,1),border-radius .45s,background .3s,border-color .3s,box-shadow .3s;
   overflow:visible;
   position:relative;
+  box-shadow:0 4px 18px rgba(0,0,0,0.35), 0 0 26px rgba(77,214,181,0.28);
+}
+[data-theme="light"] .search-lens{
+  background:rgba(255,255,255,0.6);
+  border-color:rgba(31,174,140,0.4);
+  box-shadow:0 4px 14px rgba(0,0,0,0.12), 0 0 20px rgba(31,174,140,0.18);
 }
 .search-lens svg{
-  flex-shrink:0;width:30px;height:30px;stroke:var(--teal);
+  flex-shrink:0;width:34px;height:34px;stroke:var(--teal);
   filter:drop-shadow(0 4px 10px rgba(31,174,140,0.45)) drop-shadow(0 2px 6px rgba(0,0,0,0.25));
   transition:width .3s,height .3s;
 }
@@ -277,7 +268,9 @@ h1{
   stroke:var(--text-primary);width:20px;height:20px;
   filter:none;
 }
-.search-lens input{
+.search-lens input{display:none;}
+.search-lens.open input{
+  display:block;
   flex:1;background:transparent;border:none;outline:none;
   color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:14px;
   direction:ltr;text-align:right;
@@ -587,7 +580,6 @@ footer{
   .station-table{width:99vw;margin-top:6px;}
   .eyebrow{font-size:10px;padding:5px 12px;}
   h1{font-size:clamp(22px,6vw,32px);}
-  .subtitle{font-size:12.5px;padding:7px 14px;width:90%;}
   .recent-panel{gap:6px;}
   .cards-row{gap:6px;}
   .stat-card{padding:10px 8px;border-right-width:2px;}
@@ -656,7 +648,6 @@ footer{
       <div class="hero-heading">
         <div class="eyebrow">SEC // DISTRIBUTION NETWORK</div>
         <h1>ابحث عن محطات التوزيع والتحويل</h1>
-        <p class="subtitle">أدخل رقم محطة التوزيع أو محطة التحويل لعرض موقعها بدقة على الخريطة</p>
       </div>
       <div class="search-wrap">
         <div class="search-lens" id="searchLens">
