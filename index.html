@@ -416,6 +416,29 @@ h1{
 }
 .nearby-opt:hover{background:var(--bg-elev);}
 
+.outage-panel{
+  position:absolute;top:54px;left:14px;z-index:6;
+  display:none;flex-direction:column;gap:8px;
+  background:var(--bg-card);border:1px solid var(--border-strong);border-radius:12px;
+  padding:12px;box-shadow:0 10px 24px rgba(0,0,0,.3);width:min(260px, 80vw);
+}
+.outage-panel.show{display:flex;}
+.outage-panel-title{font-size:11.5px;font-weight:600;color:var(--text-secondary);}
+.outage-panel textarea{
+  width:100%;min-height:70px;resize:vertical;
+  background:var(--bg);border:1px solid var(--border-strong);border-radius:8px;
+  padding:8px 10px;color:var(--text-primary);font-family:'JetBrains Mono',monospace;
+  font-size:12px;direction:ltr;text-align:right;outline:none;
+}
+.outage-panel textarea:focus{border-color:var(--teal);}
+.outage-panel textarea::placeholder{font-family:'IBM Plex Sans Arabic',sans-serif;font-size:11px;color:var(--text-secondary);}
+.outage-error{font-size:11px;color:#E0654F;min-height:14px;}
+.outage-submit-btn{
+  background:var(--teal);color:#fff;border:none;border-radius:8px;
+  padding:9px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;
+}
+.outage-submit-btn:hover{opacity:.9;}
+
 /* ===== علامة المحطة المحددة — دائرة خضراء متوهجة بنبض مستمر، فوق هالة زرقاء داكنة ===== */
 .selected-station-marker{position:relative;width:46px;height:46px;}
 .ssm-halo{
@@ -687,11 +710,20 @@ footer{
       <div class="map-tool-btn" id="nearbyToggleBtn" title="محطات قريبة / محطات المغذي">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
       </div>
+      <div class="map-tool-btn" id="outageToggleBtn" title="محطات العطل (أكثر من محطة)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h8l-1 8 10-12h-8l1-8z"/></svg>
+      </div>
     </div>
     <div class="nearby-panel" id="nearbyPanel">
       <button class="nearby-opt" data-mode="nearby">📍 محطات قريبة (٢ كم)</button>
       <button class="nearby-opt" data-mode="coords">📐 إحداثيات فقط</button>
       <button class="nearby-opt" data-mode="feeder">🔌 كامل محطات المغذي</button>
+    </div>
+    <div class="outage-panel" id="outagePanel">
+      <div class="outage-panel-title">محطات العطل — أدخل الأرقام بالترتيب</div>
+      <textarea id="outageInput" placeholder="مثال: 39070, 93080, ABN110&#10;افصل بينها بفاصلة أو سطر جديد"></textarea>
+      <div id="outageError" class="outage-error"></div>
+      <button class="outage-submit-btn" id="outageSubmitBtn">عرض على الخريطة</button>
     </div>
     <div class="map-tool-hint" id="mapToolHint"></div>
     <div class="zoom-controls" id="zoomControls">
@@ -1049,6 +1081,8 @@ const satelliteToggleBtn = document.getElementById('satelliteToggleBtn');
 const measureToggleBtn = document.getElementById('measureToggleBtn');
 const routeToggleBtn = document.getElementById('routeToggleBtn');
 const nearbyToggleBtn = document.getElementById('nearbyToggleBtn');
+const outageToggleBtn = document.getElementById('outageToggleBtn');
+const outagePanel = document.getElementById('outagePanel');
 document.getElementById('zoomInBtn').addEventListener('click', ()=>{ if(leafletMap) leafletMap.zoomIn(); });
 document.getElementById('zoomOutBtn').addEventListener('click', ()=>{ if(leafletMap) leafletMap.zoomOut(); });
 const nearbyPanel = document.getElementById('nearbyPanel');
@@ -1224,7 +1258,7 @@ measureToggleBtn.addEventListener('click', ()=>{
   if(!leafletMap) return;
   measureActive = !measureActive;
   if(routeActive){ routeActive=false; }
-  resetMeasure(); resetRoute();
+  resetMeasure(); resetRoute(); clearOutageMarkers();
   if(measureActive){
     setActiveTool('measure');
     mapToolHint.textContent = 'اضغط نقطتين أو أكثر على الخريطة لقياس المسافة';
@@ -1265,7 +1299,7 @@ routeToggleBtn.addEventListener('click', ()=>{
   if(!leafletMap) return;
   routeActive = !routeActive;
   if(measureActive){ measureActive=false; }
-  resetMeasure(); resetRoute();
+  resetMeasure(); resetRoute(); clearOutageMarkers();
   if(routeActive){
     setActiveTool('route');
     mapToolHint.textContent = 'اضغط نقاط الطريق بالترتيب (موقعك، ثم كل محطة تنتقل لها)';
@@ -1431,7 +1465,7 @@ document.querySelectorAll('.nearby-opt').forEach(btn=>{
     nearbyPanel.classList.remove('show');
     if(!currentStation || !leafletMap) return;
     const mode = btn.dataset.mode;
-    clearNearbyMarkers();
+    clearNearbyMarkers(); clearOutageMarkers();
     nearbyFullData = [];
     nearbyModeActive = mode;
     mapToolHint.classList.add('show');
@@ -1463,6 +1497,97 @@ document.querySelectorAll('.nearby-opt').forEach(btn=>{
       mapToolHint.textContent = 'تعذّر جلب المحطات — الميزة تحتاج تفعيل بالباك إند';
     }
   });
+});
+
+/* ============================================================
+ *  أداة محطات العطل — إدخال أكثر من محطة (توزيع و/أو تحويل معاً)
+ *  تُعرض بالترتيب على الخريطة، والانتقال لقوقل ماب يبدأ من موقعي
+ *  الحالي ثم يمر على كل محطة بالترتيب المُدخل (A → B → C...)
+ * ============================================================ */
+let outageMarkers = [];
+let outageLine = null;
+function clearOutageMarkers(){
+  outageMarkers.forEach(m=>leafletMap.removeLayer(m));
+  outageMarkers = [];
+  if(outageLine){ leafletMap.removeLayer(outageLine); outageLine = null; }
+}
+function outageLetterIcon(letter, color){
+  return L.divIcon({
+    className:'',
+    html:`<div style="width:26px;height:26px;border-radius:50%;background:${color};border:2px solid #fff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;box-shadow:0 2px 8px rgba(0,0,0,.5)">${letter}</div>`,
+    iconSize:[26,26], iconAnchor:[13,13]
+  });
+}
+function outageLetterFor(i){
+  // A..Z ثم AA, AB... لو تجاوز عدد المحطات 26 (سيناريو نادر لكن نتفادى الانكسار)
+  let s = '';
+  i++;
+  while(i > 0){ i--; s = String.fromCharCode(65 + (i % 26)) + s; i = Math.floor(i/26); }
+  return s;
+}
+
+outageToggleBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  outagePanel.classList.toggle('show');
+  nearbyPanel.classList.remove('show');
+});
+document.addEventListener('click', (e)=>{
+  if(!outageToggleBtn.contains(e.target) && !outagePanel.contains(e.target)) outagePanel.classList.remove('show');
+});
+
+document.getElementById('outageSubmitBtn').addEventListener('click', async ()=>{
+  if(!leafletMap) return;
+  const raw = document.getElementById('outageInput').value;
+  const ids = raw.split(/[,\n،]+/).map(s=>s.trim()).filter(Boolean);
+  const errEl = document.getElementById('outageError');
+  errEl.textContent = '';
+
+  if(ids.length < 2){ errEl.textContent = 'أدخل محطتين على الأقل'; return; }
+  if(ids.length > 15){ errEl.textContent = 'الحد الأقصى 15 محطة بالمرة الواحدة'; return; }
+
+  clearOutageMarkers();
+  clearNearbyMarkers(); resetMeasure(); resetRoute();
+  measureActive = false; routeActive = false; nearbyModeActive = null;
+  setActiveTool(null);
+  mapToolHint.classList.add('show');
+  mapToolHint.textContent = 'جاري البحث عن المحطات...';
+
+  const results = await Promise.all(ids.map(id => callBackend('searchStation', { query: id })));
+
+  const found = [];
+  const notFound = [];
+  results.forEach((res, i)=>{
+    if(res.found){ found.push({ ...res, _inputId: ids[i] }); }
+    else { notFound.push(ids[i]); }
+  });
+
+  if(found.length < 2){
+    errEl.textContent = 'ما لقيت محطتين صالحتين على الأقل بالأرقام المدخلة';
+    mapToolHint.classList.remove('show');
+    return;
+  }
+
+  outagePanel.classList.remove('show');
+  const bounds = [];
+  found.forEach((s, i)=>{
+    const letter = outageLetterFor(i);
+    const color = s.type === 'تحويل' ? '#8B6DD6' : teal();
+    const marker = L.marker([s.lat, s.lng], { icon: outageLetterIcon(letter, color) });
+    marker.bindPopup(`<div style="font-family:'IBM Plex Sans Arabic',sans-serif;direction:rtl;font-size:13px"><b>${letter}) ${s.name}</b><br>رقم: ${s.id}</div>`);
+    marker.addTo(leafletMap);
+    outageMarkers.push(marker);
+    bounds.push([s.lat, s.lng]);
+  });
+  outageLine = L.polyline(bounds, {color:'#C8A24E', weight:2, dashArray:'5,5'}).addTo(leafletMap);
+  leafletMap.fitBounds(bounds, {padding:[60,60], maxZoom:16});
+
+  const destination = found[found.length-1];
+  const middleStops = found.slice(0, -1);
+  const waypointsStr = middleStops.map(s => `${s.lat},${s.lng}`).join('|');
+  const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination.lat},${destination.lng}&waypoints=${encodeURIComponent(waypointsStr)}&travelmode=driving`;
+
+  const notFoundNote = notFound.length ? ` — تعذّر إيجاد: ${notFound.join('، ')}` : '';
+  mapToolHint.innerHTML = `محطات العطل (${found.length}) بالترتيب A→${outageLetterFor(found.length-1)}${notFoundNote} <a href="${gmapsUrl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;background:${teal()};color:#fff;padding:6px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600">الانتقال بالترتيب على قوقل ماب</a>`;
 });
 
 function stationPinIcon(){
@@ -1712,6 +1837,7 @@ backBtn.addEventListener('click', ()=>{
   mapToolHint.classList.remove('show');
   measureActive = false; routeActive = false;
   resetMeasure(); resetRoute(); clearNearbyMarkers(); nearbyModeActive = null; nearbyPanel.classList.remove('show');
+  clearOutageMarkers(); outagePanel.classList.remove('show'); document.getElementById('outageInput').value=''; document.getElementById('outageError').textContent='';
   setActiveTool(null);
   stationTable.classList.remove('show');
   searchInput.value='';
