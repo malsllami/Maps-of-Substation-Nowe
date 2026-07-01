@@ -60,6 +60,41 @@ header{
 .logo-text{font-size:15px;font-weight:700;letter-spacing:.3px;white-space:nowrap;transition:color .2s;}
 .logo-sub{font-size:11px;color:var(--text-secondary);margin-top:1px;white-space:nowrap;}
 .header-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.mobile-user-menu{display:none;position:relative;}
+.mobile-menu-trigger{
+  display:flex;align-items:center;gap:5px;
+  background:var(--bg-card);border:1px solid var(--border-strong);border-radius:20px;
+  padding:8px 14px;font-size:12.5px;font-weight:500;color:var(--text-primary);
+  cursor:pointer;font-family:inherit;
+}
+.mobile-menu-trigger:hover{border-color:var(--teal);}
+.mobile-menu-trigger svg{transition:transform .2s;flex-shrink:0;}
+.mobile-user-menu.open .mobile-menu-trigger svg{transform:rotate(180deg);}
+.mobile-menu-panel{
+  position:absolute;top:calc(100% + 8px);left:0;
+  background:var(--bg-card);border:1px solid var(--border-strong);border-radius:14px;
+  min-width:190px;box-shadow:0 10px 28px rgba(0,0,0,.35);
+  padding:8px;display:none;z-index:60;
+}
+.mobile-user-menu.open .mobile-menu-panel{display:block;}
+.mobile-menu-row{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;font-size:12.5px;color:var(--text-primary);}
+.mobile-menu-link{display:block;padding:10px 10px;font-size:12.5px;color:var(--text-primary);text-decoration:none;border-radius:8px;}
+.mobile-menu-link:hover{background:var(--bg-elev);}
+.mobile-menu-logout{
+  width:100%;text-align:right;padding:10px 10px;font-size:12.5px;color:#E0654F;
+  background:transparent;border:none;border-top:1px solid var(--border);margin-top:4px;
+  cursor:pointer;font-family:inherit;
+}
+.theme-switch{
+  width:42px;height:23px;border-radius:12px;position:relative;flex-shrink:0;
+  background:var(--border-strong);border:none;cursor:pointer;transition:background .2s;padding:0;
+}
+.theme-switch.on{background:var(--teal);}
+.theme-switch-knob{
+  position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;
+  background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);
+}
+.theme-switch.on .theme-switch-knob{transform:translateX(19px);}
 .login-btn{
   text-decoration:none;font-size:13px;font-weight:500;color:var(--text-primary);
   background:var(--bg-card);border:1px solid var(--border-strong);
@@ -100,6 +135,12 @@ header{
 #map-container.active{opacity:1;pointer-events:auto;}
 [data-theme="dark"] .leaflet-tile-pane{filter:invert(0.92) hue-rotate(180deg) brightness(0.95) contrast(0.9);}
 [data-theme="dark"] #map-container.satellite-active .leaflet-tile-pane{filter:none;}
+.leaflet-control-zoom a{cursor:pointer;}
+@media (max-width:600px){
+  /* رفع أزرار التكبير عن الحافة السفلية للجوال — المنطقة تتداخل غالباً مع شريط تحكم المتصفح فتصبح غير قابلة للنقر فعلياً حتى لو ظاهرة */
+  .leaflet-bottom.leaflet-left{margin-bottom:max(20px, env(safe-area-inset-bottom, 0px)) !important;bottom:56px !important;}
+  .leaflet-control-zoom a{width:36px !important;height:36px !important;line-height:36px !important;font-size:19px !important;}
+}
 .hero-content{
   position:absolute;inset:0;z-index:5;
   padding:0 30px;pointer-events:none;
@@ -108,12 +149,21 @@ header{
 .hero-content .search-wrap{pointer-events:auto;}
 .hero-content.hidden{opacity:0;pointer-events:none;}
 .eyebrow{
-  position:absolute;top:8%;left:50%;transform:translateX(-50%);
+  position:absolute;top:17%;left:50%;transform:translateX(-50%);
   font-family:'JetBrains Mono',monospace;
-  font-size:11px;letter-spacing:2px;color:var(--teal);
+  font-size:11px;letter-spacing:2px;color:var(--teal-light);
   text-transform:uppercase;
-  text-align:center;width:100%;
-  text-shadow:0 2px 10px rgba(0,0,0,0.6);
+  text-align:center;width:auto;
+  background:rgba(5,15,25,0.45);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  border-radius:20px;padding:6px 16px;
+  white-space:nowrap;
+  text-shadow:0 1px 4px rgba(0,0,0,0.5);
+}
+[data-theme="light"] .eyebrow{
+  color:var(--blue-deep);
+  background:rgba(255,255,255,0.65);
+  text-shadow:none;
 }
 h1{
   position:absolute;top:44%;left:50%;transform:translate(-50%,-50%);
@@ -131,7 +181,7 @@ h1{
   -webkit-text-fill-color:transparent;
 }
 .subtitle{
-  position:absolute;top:64%;left:50%;transform:translate(-50%,-50%);
+  position:absolute;top:63%;left:50%;transform:translate(-50%,-50%);
   width:min(480px,84%);
   color:#fff;
   background:rgba(5,15,25,0.45);
@@ -146,7 +196,7 @@ h1{
   text-shadow:none;
 }
 .search-wrap{
-  position:absolute;bottom:4%;left:50%;transform:translateX(-50%);
+  position:absolute;bottom:1%;left:50%;transform:translateX(-50%);
   width:100%;
   pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:10px;
 }
@@ -299,6 +349,18 @@ h1{
 }
 .map-tool-btn:hover{border-color:var(--teal);color:var(--teal);}
 .map-tool-btn.active{background:var(--teal);border-color:var(--teal);color:#fff;}
+.nearby-panel{
+  position:absolute;top:54px;left:14px;z-index:6;
+  display:none;flex-direction:column;gap:6px;
+  background:var(--bg-card);border:1px solid var(--border-strong);border-radius:12px;
+  padding:8px;box-shadow:0 10px 24px rgba(0,0,0,.3);min-width:190px;
+}
+.nearby-panel.show{display:flex;}
+.nearby-opt{
+  text-align:right;background:transparent;border:none;padding:9px 10px;border-radius:8px;
+  font-size:12px;color:var(--text-primary);cursor:pointer;font-family:inherit;
+}
+.nearby-opt:hover{background:var(--bg-elev);}
 .map-tool-hint{
   position:absolute;top:14px;left:56px;right:14px;
   background:var(--bg-card);border:1px solid var(--border-strong);
@@ -401,20 +463,25 @@ footer{
 }
 @media (max-width:600px){
   .search-lens.open{width:88vw;}
-  header{padding:12px 14px;}
+  header{padding:12px 14px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;}
+  .logo{grid-column:2;justify-self:center;}
+  .header-actions{grid-column:3;justify-self:end;gap:6px;}
   .logo-sub{display:none;}
   .logo-text{font-size:13px;}
   .logo-mark{height:26px;}
-  .header-actions{gap:6px;}
+  #headerActions.logged-in .login-btn,
+  #headerActions.logged-in .theme-toggle,
+  #headerActions.logged-in #logoutBtnDesktop{display:none;}
+  #headerActions.logged-in .mobile-user-menu{display:block;}
   .login-btn{padding:7px 12px;font-size:12px;}
   .theme-toggle{width:34px;height:34px;}
   .hero{padding:100px 6px 40px;}
   .globe-stage{height:min(660px, 76vh);width:99vw;}
   .station-table{width:99vw;margin-top:6px;}
-  .eyebrow{top:7%;font-size:10px;}
-  h1{top:40%;font-size:clamp(22px,6vw,32px);}
-  .subtitle{top:60%;font-size:12.5px;padding:7px 14px;width:90%;}
-  .search-wrap{bottom:3%;}
+  .eyebrow{top:14%;font-size:10px;padding:5px 12px;}
+  h1{top:38%;font-size:clamp(22px,6vw,32px);}
+  .subtitle{top:56%;font-size:12.5px;padding:7px 14px;width:90%;}
+  .search-wrap{bottom:1%;}
   .recent-panel{gap:6px;}
   .cards-row{gap:6px;}
   .stat-card{padding:10px 8px;border-right-width:2px;}
@@ -450,10 +517,26 @@ footer{
       <div class="logo-sub">محطات التوزيع — منصة الإحداثيات</div>
     </div>
   </div>
-  <div class="header-actions">
+  <div class="header-actions" id="headerActions">
     <a href="auth.html" class="login-btn" id="loginBtn">تسجيل الدخول</a>
     <div class="theme-toggle" id="themeToggle" aria-label="تبديل الوضع الداكن والفاتح">
       <svg id="themeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"></line><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"></line></svg>
+    </div>
+
+    <div class="mobile-user-menu" id="mobileUserMenu">
+      <button class="mobile-menu-trigger" id="mobileMenuTrigger">
+        <span id="mobileMenuName">القائمة</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="mobile-menu-panel" id="mobileMenuPanel">
+        <div class="mobile-menu-row">
+          <span>الوضع الداكن</span>
+          <button class="theme-switch" id="themeSwitchMobile" aria-label="تبديل الوضع الداكن"><span class="theme-switch-knob"></span></button>
+        </div>
+        <a href="admin.html" class="mobile-menu-link" id="mobileAdminLink" style="display:none">لوحة المدير</a>
+        <a href="index.html" class="mobile-menu-link">الصفحة الرئيسية</a>
+        <button class="mobile-menu-logout" id="mobileLogoutBtn" style="display:none">تسجيل الخروج</button>
+      </div>
     </div>
   </div>
 </header>
@@ -502,6 +585,14 @@ footer{
       <div class="map-tool-btn" id="routeToggleBtn" title="رسم مسار متعدد النقاط">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 7l8 10"/></svg>
       </div>
+      <div class="map-tool-btn" id="nearbyToggleBtn" title="محطات قريبة / محطات المغذي">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 3"/></svg>
+      </div>
+    </div>
+    <div class="nearby-panel" id="nearbyPanel">
+      <button class="nearby-opt" data-mode="nearby">📍 محطات قريبة (٢ كم)</button>
+      <button class="nearby-opt" data-mode="coords">📐 إحداثيات فقط</button>
+      <button class="nearby-opt" data-mode="feeder">🔌 كامل محطات المغذي</button>
     </div>
     <div class="map-tool-hint" id="mapToolHint"></div>
   </div>
@@ -609,6 +700,8 @@ document.querySelectorAll('.stat-card').forEach(card=>{
 
 /* ===== تبديل الثيم ===== */
 const themeToggle = document.getElementById('themeToggle');
+const headerActions = document.getElementById('headerActions');
+const mobileUserMenu = document.getElementById('mobileUserMenu');
 /* ===== حالة تسجيل الدخول بالهيدر — جلسة متجددة 4 أيام من آخر نشاط ===== */
 const SESSION_MAX_AGE_MS = 4 * 24 * 60 * 60 * 1000;
 (function(){
@@ -628,26 +721,61 @@ const SESSION_MAX_AGE_MS = 4 * 24 * 60 * 60 * 1000;
     const loginBtn = document.getElementById('loginBtn');
     if(!loginBtn || !session.name) return;
 
+    headerActions.classList.add('logged-in');
     loginBtn.textContent = session.name.split(' ')[0];
     loginBtn.setAttribute('href', session.role === 'admin' ? 'admin.html' : 'member.html');
 
     const logoutBtn = document.createElement('button');
+    logoutBtn.id = 'logoutBtnDesktop';
     logoutBtn.title = 'تسجيل الخروج';
     logoutBtn.setAttribute('aria-label', 'تسجيل الخروج');
     logoutBtn.style.cssText = 'width:34px;height:34px;border-radius:50%;border:1px solid var(--border-strong);background:var(--bg-card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);flex-shrink:0;transition:border-color .2s';
     logoutBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
     logoutBtn.addEventListener('mouseenter', ()=>logoutBtn.style.borderColor='var(--teal)');
     logoutBtn.addEventListener('mouseleave', ()=>logoutBtn.style.borderColor='var(--border-strong)');
-    logoutBtn.addEventListener('click', ()=>{
+    const doLogout = ()=>{
       if(confirm('تسجيل الخروج؟')){
         localStorage.removeItem('sec-session');
         localStorage.removeItem('sec-phone');
         location.reload();
       }
-    });
+    };
+    logoutBtn.addEventListener('click', doLogout);
     loginBtn.parentElement.insertBefore(logoutBtn, loginBtn.nextSibling);
+
+    // ===== تعبئة القائمة المنسدلة الخاصة بالجوال بنفس بيانات الجلسة =====
+    document.getElementById('mobileMenuName').textContent = session.name.split(' ')[0];
+    document.getElementById('mobileLogoutBtn').style.display = 'block';
+    document.getElementById('mobileLogoutBtn').addEventListener('click', doLogout);
+    if(session.role === 'admin'){
+      document.getElementById('mobileAdminLink').style.display = 'block';
+    }
   }catch(e){}
 })();
+
+const mobileMenuTrigger = document.getElementById('mobileMenuTrigger');
+mobileMenuTrigger.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  mobileUserMenu.classList.toggle('open');
+});
+document.addEventListener('click', (e)=>{
+  if(!mobileUserMenu.contains(e.target)) mobileUserMenu.classList.remove('open');
+});
+
+const themeSwitchMobile = document.getElementById('themeSwitchMobile');
+function syncThemeSwitch(){
+  const isDark = document.body.getAttribute('data-theme') === 'dark';
+  themeSwitchMobile.classList.toggle('on', isDark);
+}
+syncThemeSwitch();
+themeSwitchMobile.addEventListener('click', ()=>{
+  const cur = document.body.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.body.setAttribute('data-theme', next);
+  localStorage.setItem('sec-theme', next);
+  updateGlobeColors();
+  syncThemeSwitch();
+});
 
 themeToggle.addEventListener('click', ()=>{
   const cur = document.body.getAttribute('data-theme');
@@ -655,6 +783,7 @@ themeToggle.addEventListener('click', ()=>{
   document.body.setAttribute('data-theme', next);
   localStorage.setItem('sec-theme', next);
   updateGlobeColors();
+  syncThemeSwitch();
 });
 
 /* ===== الكرة الأرضية Three.js — محصورة بحدود globeStage فقط ===== */
@@ -809,6 +938,8 @@ const mapToolHint = document.getElementById('mapToolHint');
 const satelliteToggleBtn = document.getElementById('satelliteToggleBtn');
 const measureToggleBtn = document.getElementById('measureToggleBtn');
 const routeToggleBtn = document.getElementById('routeToggleBtn');
+const nearbyToggleBtn = document.getElementById('nearbyToggleBtn');
+const nearbyPanel = document.getElementById('nearbyPanel');
 
 document.getElementById('searchLensIcon').addEventListener('click', (e)=>{
   if(searchLens.classList.contains('open') && searchInput.value.trim()){
@@ -1097,6 +1228,72 @@ function handleRouteClick(latlng){
 
 const teal = ()=> document.body.getAttribute('data-theme')==='dark' ? '#4DD6B5':'#1FAE8C';
 
+/* ============================================================
+ *  أداة المحطات القريبة — ثلاث أوضاع:
+ *  1) nearby  → محطات ضمن 2 كم من موقع المحطة الحالية المفتوحة
+ *  2) coords  → نفس محطات nearby لكن عرض مصغّر (إحداثيات فقط، بدون تفاصيل)
+ *  3) feeder  → كل محطات المغذي نفسه بغض النظر عن المسافة
+ *
+ *  ⚠️ عقد الباك إند المطلوب (غير موجود بعد بـ Apps Script حسب علمي):
+ *  action: 'getNearbyStations'   payload: {lat, lng, radiusKm}   → {success, stations:[{id,name,lat,lng,type,feeder,region}]}
+ *  action: 'getFeederStations'   payload: {feeder}               → {success, stations:[...]}
+ *  لو الأكشن غير موجود، الباك إند يرجّع خطأ عادي ونتعامل معه أدناه بدون كسر الموقع.
+ * ============================================================ */
+let nearbyMarkers = [];
+function clearNearbyMarkers(){
+  nearbyMarkers.forEach(m=>leafletMap.removeLayer(m));
+  nearbyMarkers = [];
+}
+
+nearbyToggleBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  nearbyPanel.classList.toggle('show');
+});
+document.addEventListener('click', (e)=>{
+  if(!nearbyToggleBtn.contains(e.target) && !nearbyPanel.contains(e.target)) nearbyPanel.classList.remove('show');
+});
+
+document.querySelectorAll('.nearby-opt').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    nearbyPanel.classList.remove('show');
+    if(!currentStation || !leafletMap) return;
+    const mode = btn.dataset.mode;
+    clearNearbyMarkers();
+    mapToolHint.classList.add('show');
+    mapToolHint.textContent = 'جاري التحميل...';
+
+    try{
+      let res;
+      if(mode === 'feeder'){
+        if(!currentStation.feeder){ mapToolHint.textContent = 'لا يوجد مغذي مسجّل لهذه المحطة'; return; }
+        res = await callBackend('getFeederStations', { feeder: currentStation.feeder });
+      } else {
+        res = await callBackend('getNearbyStations', { lat: currentStation.lat, lng: currentStation.lng, radiusKm: 2 });
+      }
+      if(!res.success || !res.stations) throw new Error(res.error || 'الميزة غير متاحة من الخادم بعد');
+
+      res.stations.forEach(s=>{
+        if(String(s.id) === String(currentStation.id)) return;
+        let marker;
+        if(mode === 'coords'){
+          marker = L.circleMarker([s.lat,s.lng], {radius:6, color:'#C8A24E', fillColor:'#C8A24E', fillOpacity:0.9, weight:2})
+            .bindPopup(`<b>${s.id}</b><br>${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}`);
+        } else {
+          marker = L.circleMarker([s.lat,s.lng], {radius:7, color:teal(), fillColor:teal(), fillOpacity:0.85, weight:2})
+            .bindPopup(`<b>${s.name || s.id}</b><br>رقم: ${s.id}${s.feeder ? '<br>المغذي: '+s.feeder : ''}`);
+        }
+        marker.addTo(leafletMap);
+        nearbyMarkers.push(marker);
+      });
+
+      const label = mode==='feeder' ? `محطات المغذي "${currentStation.feeder}"` : (mode==='coords' ? 'محطات قريبة (إحداثيات)' : 'محطات قريبة (٢ كم)');
+      mapToolHint.textContent = `${label} — ${res.stations.length} محطة`;
+    }catch(err){
+      mapToolHint.textContent = 'تعذّر جلب المحطات — الميزة تحتاج تفعيل بالباك إند';
+    }
+  });
+});
+
 function stationPinIcon(){
   return L.divIcon({
     className:'',
@@ -1179,7 +1376,7 @@ function startMorphExpand(s){
       mapTools.classList.add('show');
       setTimeout(()=>{
         leafletMap.invalidateSize();
-        leafletMap.flyTo([s.lat, s.lng], 16, {duration:1.4});
+        leafletMap.flyTo([s.lat, s.lng], 18, {duration:1.4});
         if(marker) leafletMap.removeLayer(marker);
         marker = L.marker([s.lat,s.lng], {icon: stationPinIcon()}).addTo(leafletMap);
 
@@ -1257,7 +1454,7 @@ function openEditForm(){
 
   setTimeout(()=>{
     if(editPreviewMap){ editPreviewMap.remove(); editPreviewMap = null; }
-    editPreviewMap = L.map('editPreviewMap', {zoomControl:false, attributionControl:false, dragging:true}).setView([s.lat, s.lng], 15);
+    editPreviewMap = L.map('editPreviewMap', {zoomControl:false, attributionControl:false, dragging:true}).setView([s.lat, s.lng], 17);
     L.tileLayer(TILE_URL, {maxZoom:19}).addTo(editPreviewMap);
     editPreviewMarker = L.marker([s.lat, s.lng], {draggable:true}).addTo(editPreviewMap);
     editPreviewMarker.on('dragend', ()=>{
@@ -1338,7 +1535,7 @@ backBtn.addEventListener('click', ()=>{
   mapTools.classList.remove('show');
   mapToolHint.classList.remove('show');
   measureActive = false; routeActive = false;
-  resetMeasure(); resetRoute();
+  resetMeasure(); resetRoute(); clearNearbyMarkers(); nearbyPanel.classList.remove('show');
   setActiveTool(null);
   stationTable.classList.remove('show');
   searchInput.value='';
