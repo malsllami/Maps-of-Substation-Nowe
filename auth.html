@@ -38,9 +38,16 @@ body{
 .brand-text{font-size:15px;font-weight:700;letter-spacing:.3px;white-space:nowrap;transition:color .2s;}
 .brand:hover .brand-mark{transform:scale(1.06);}
 .brand:hover .brand-text{color:var(--teal);}
-.tabs{display:flex; background:var(--bg); border-radius:10px; padding:4px; margin-bottom:24px; border:1px solid var(--border);}
-.tab{flex:1; text-align:center; padding:9px; border-radius:7px; font-size:13px; cursor:pointer; color:var(--text-secondary); transition:.2s;}
-.tab.active{background:var(--bg-card); color:var(--text-primary); font-weight:500; box-shadow:0 1px 3px rgba(0,0,0,.1);}
+.tabs{position:relative;display:flex; background:var(--bg); border-radius:10px; padding:4px; margin-bottom:24px; border:1px solid var(--border);}
+.tab-indicator{
+  position:absolute;top:4px;bottom:4px;left:0;width:0;
+  background:var(--bg-card);border-radius:7px;
+  box-shadow:0 1px 3px rgba(0,0,0,.1);
+  transition:left .32s cubic-bezier(.34,1.35,.64,1), width .32s cubic-bezier(.34,1.35,.64,1);
+  z-index:0;
+}
+.tab{flex:1;position:relative;z-index:1; text-align:center; padding:9px; border-radius:7px; font-size:13px; cursor:pointer; color:var(--text-secondary); transition:color .2s;}
+.tab.active{color:var(--text-primary); font-weight:500;}
 h2{font-size:18px; font-weight:700; margin-bottom:6px;}
 .desc{font-size:13px; color:var(--text-secondary); margin-bottom:22px; line-height:1.6;}
 .field{margin-bottom:16px;}
@@ -51,23 +58,50 @@ h2{font-size:18px; font-weight:700; margin-bottom:6px;}
   padding:0 14px; outline:none; transition:border-color .2s;
 }
 .input-base:focus{border-color:var(--teal);}
-.phone-field{display:flex; gap:8px;}
-.country-select{
-  display:flex; align-items:center; gap:6px; height:46px; padding:0 10px;
-  background:var(--bg); border:1px solid var(--border-strong); border-radius:10px;
-  cursor:pointer; position:relative; min-width:92px; flex-shrink:0;
+
+/* ===== Floating Label ===== */
+.field.floating{position:relative;margin-bottom:18px;}
+.field.floating label{
+  position:absolute;right:14px;top:23px;transform:translateY(-50%);
+  font-size:14px;color:var(--text-secondary);margin:0;
+  transition:top .18s ease,font-size .18s ease,color .18s ease;
+  pointer-events:none;background:var(--bg);padding:0 4px;
+  z-index:2;
 }
-.country-flag{width:20px; height:14px; border-radius:2px; overflow:hidden; flex-shrink:0;}
+.field.floating .input-base:focus + label,
+.field.floating .input-base:not(:placeholder-shown) + label,
+.field.floating .phone-unified.focused label,
+.field.floating .phone-unified.filled label{
+  top:0;font-size:11px;color:var(--teal);
+}
+
+/* ===== مربع الجوال الموحّد: مفتاح الدولة + خط فاصل + رقم الجوال بنفس الصندوق ===== */
+.phone-unified{
+  position:relative;display:flex;align-items:center;
+  height:46px;background:var(--bg);border:1px solid var(--border-strong);
+  border-radius:10px;transition:border-color .2s;
+}
+.phone-unified:focus-within{border-color:var(--teal);}
+.phone-prefix{
+  position:relative;display:flex;align-items:center;gap:5px;
+  padding:0 12px 0 10px;height:100%;cursor:pointer;flex-shrink:0;
+}
+.phone-divider{width:1px;height:22px;background:var(--border-strong);flex-shrink:0;}
+.phone-input-unified{
+  flex:1;min-width:0;height:100%;border:none;background:transparent;outline:none;
+  color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:14px;
+  direction:ltr;text-align:right;padding:0 12px;
+}
+#phoneLabel{right:98px;}
 .country-code{font-family:'JetBrains Mono',monospace; font-size:13px; direction:ltr;}
 .country-dropdown{
-  position:absolute; top:52px; right:0; width:230px; max-height:240px; overflow-y:auto;
+  position:absolute; top:44px; right:-4px; width:230px; max-height:240px; overflow-y:auto;
   background:var(--bg-card); border:1px solid var(--border-strong); border-radius:10px;
   box-shadow:0 8px 24px rgba(0,0,0,.2); z-index:20; display:none;
 }
 .country-dropdown.open{display:block;}
 .country-option{display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; font-size:13px;}
 .country-option:hover{background:var(--bg);}
-.phone-input{flex:1; direction:ltr; text-align:right; font-family:'JetBrains Mono',monospace;}
 .error-banner{
   background:var(--danger-bg); color:var(--danger); font-size:12.5px;
   padding:10px 12px; border-radius:8px; margin-bottom:16px; display:none; line-height:1.6;
@@ -92,6 +126,12 @@ h2{font-size:18px; font-weight:700; margin-bottom:6px;}
 .btn-progress .check{display:none;}
 .btn-progress.success .check{display:inline;}
 .btn-progress.success .pct, .btn-progress.success .default-label{display:none;}
+.ripple{
+  position:absolute;border-radius:50%;background:rgba(255,255,255,0.45);
+  transform:scale(0);animation:rippleAnim .6s ease-out;
+  pointer-events:none;z-index:3;
+}
+@keyframes rippleAnim{to{transform:scale(3.2);opacity:0;}}
 
 .fingerprint-step{display:none; text-align:center; padding:20px 0;}
 .fingerprint-step.show{display:block;}
@@ -140,7 +180,8 @@ h2{font-size:18px; font-weight:700; margin-bottom:6px;}
     <div class="brand-text">محطات التوزيع — SEC</div>
   </div>
 
-  <div class="tabs">
+  <div class="tabs" id="tabsWrap">
+    <div class="tab-indicator" id="tabIndicator"></div>
     <div class="tab active" id="tabLogin">تسجيل الدخول</div>
     <div class="tab" id="tabRegister">عضو جديد</div>
   </div>
@@ -150,11 +191,11 @@ h2{font-size:18px; font-weight:700; margin-bottom:6px;}
   <!-- ===== خطوة إدخال الجوال (مشتركة) ===== -->
   <div id="phoneStep">
     <h2 id="stepTitle">تسجيل الدخول</h2>
-    <p class="desc" id="stepDesc">أدخل رقم جوالك المسجل، ثم تحقق ببصمتك أو Face ID</p>
+    <p class="desc" id="stepDesc">أدخل رقم جوالك المسجل، ثم تحقق من هويتك بأفضل وسيلة يدعمها جهازك</p>
 
-    <div class="field" id="nameField" style="display:none">
-      <label>الاسم الكامل</label>
-      <input type="text" class="input-base" id="nameInput" placeholder="محمد أحمد السلامي">
+    <div class="field floating" id="nameField" style="display:none">
+      <input type="text" class="input-base" id="nameInput" placeholder=" ">
+      <label for="nameInput">الاسم الكامل</label>
     </div>
 
     <div class="field" id="memberTypeField" style="display:none">
@@ -165,16 +206,17 @@ h2{font-size:18px; font-weight:700; margin-bottom:6px;}
       </div>
     </div>
 
-    <div class="field">
-      <label>رقم الجوال</label>
-      <div class="phone-field">
-        <div class="country-select" id="countrySelect">
-          <span class="country-flag" id="selectedFlag">🇸🇦</span>
+    <div class="field floating">
+      <div class="phone-unified" id="phoneUnified">
+        <div class="phone-prefix" id="countrySelect">
+          <span id="selectedFlag">🇸🇦</span>
           <span class="country-code" id="selectedCode">+966</span>
-          <span style="font-size:10px;color:var(--text-secondary)">▾</span>
+          <span style="font-size:9px;color:var(--text-secondary)">▾</span>
           <div class="country-dropdown" id="countryDropdown"></div>
         </div>
-        <input type="text" inputmode="tel" class="input-base phone-input" id="phoneInput" placeholder="5xxxxxxxx" autocomplete="tel">
+        <div class="phone-divider"></div>
+        <input type="text" inputmode="tel" class="phone-input-unified" id="phoneInput" placeholder=" " autocomplete="tel">
+        <label for="phoneInput" id="phoneLabel">رقم الجوال</label>
       </div>
     </div>
 
@@ -205,8 +247,8 @@ h2{font-size:18px; font-weight:700; margin-bottom:6px;}
       </div>
     </div>
     <p class="fp-progress" id="fpProgress"></p>
-    <p style="font-size:14px; font-weight:500; margin-bottom:6px;" id="fpTitle">استخدم بصمتك للمتابعة</p>
-    <p style="font-size:12.5px; color:var(--text-secondary)">سيطلب جهازك التحقق ببصمة الإصبع أو الوجه</p>
+    <p style="font-size:14px; font-weight:500; margin-bottom:6px;" id="fpTitle">تحقق من هويتك</p>
+    <p style="font-size:12.5px; color:var(--text-secondary)" id="fpSubtitle">سيستخدم جهازك أفضل وسيلة تحقق متوفرة</p>
   </div>
 
   <div class="switch-link" id="switchHint">ما عندك حساب؟ <a id="goRegister">سجّل كعضو جديد</a></div>
@@ -239,6 +281,11 @@ document.querySelectorAll('.member-type-btn').forEach(btn=>{
   });
 });
 const dropdown = document.getElementById('countryDropdown');
+const phoneUnified = document.getElementById('phoneUnified');
+const phonePrefix = document.getElementById('countrySelect');
+function positionPhoneLabel(){
+  document.getElementById('phoneLabel').style.right = (phonePrefix.offsetWidth + 13) + 'px';
+}
 countries.forEach(c=>{
   const opt = document.createElement('div');
   opt.className = 'country-option';
@@ -248,6 +295,7 @@ countries.forEach(c=>{
     document.getElementById('selectedFlag').textContent = c.flag;
     document.getElementById('selectedCode').textContent = c.code;
     dropdown.classList.remove('open');
+    positionPhoneLabel();
   });
   dropdown.appendChild(opt);
 });
@@ -256,28 +304,43 @@ document.getElementById('countrySelect').addEventListener('click', (e)=>{
   dropdown.classList.toggle('open');
 });
 document.addEventListener('click', ()=> dropdown.classList.remove('open'));
+positionPhoneLabel();
 
-/* ===== تحويل أرقام عربية لإنجليزية بالإدخال ===== */
+/* ===== تحويل أرقام عربية لإنجليزية بالإدخال + تفعيل عنوان الجوال العائم ===== */
 const phoneInput = document.getElementById('phoneInput');
+function syncPhoneFloating(){
+  phoneUnified.classList.toggle('filled', phoneInput.value.trim().length > 0);
+}
 phoneInput.addEventListener('input', ()=>{
   const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
   phoneInput.value = phoneInput.value.replace(/[٠-٩]/g, d => arabicIndic.indexOf(d)).replace(/[^\d]/g,'');
+  syncPhoneFloating();
 });
+phoneInput.addEventListener('focus', ()=> phoneUnified.classList.add('focused'));
+phoneInput.addEventListener('blur', ()=> phoneUnified.classList.remove('focused'));
 
 /* ===== التبديل بين تسجيل الدخول / عضو جديد ===== */
 let mode = 'login';
 const tabLogin = document.getElementById('tabLogin');
 const tabRegister = document.getElementById('tabRegister');
+const tabIndicator = document.getElementById('tabIndicator');
+function moveTabIndicator(el){
+  tabIndicator.style.width = el.offsetWidth + 'px';
+  tabIndicator.style.left = el.offsetLeft + 'px';
+}
+moveTabIndicator(tabLogin);
+window.addEventListener('resize', ()=> moveTabIndicator(mode==='login' ? tabLogin : tabRegister));
 function setMode(m){
   mode = m;
   tabLogin.classList.toggle('active', m==='login');
   tabRegister.classList.toggle('active', m==='register');
+  moveTabIndicator(m==='login' ? tabLogin : tabRegister);
   document.getElementById('nameField').style.display = m==='register' ? 'block':'none';
   document.getElementById('memberTypeField').style.display = m==='register' ? 'block':'none';
   document.getElementById('stepTitle').textContent = m==='login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
   document.getElementById('stepDesc').textContent = m==='login'
-    ? 'أدخل رقم جوالك المسجل، ثم تحقق ببصمتك أو Face ID'
-    : 'سجّل بياناتك، ثم سجّل بصمة جهازك فورًا لتأمين الدخول';
+    ? 'أدخل رقم جوالك المسجل، ثم تحقق من هويتك بأفضل وسيلة يدعمها جهازك'
+    : 'سجّل بياناتك، ثم فعّل التحقق الآمن بجهازك فورًا لتأمين الدخول';
   document.getElementById('switchHint').innerHTML = m==='login'
     ? 'ما عندك حساب؟ <a id="goRegister">سجّل كعضو جديد</a>'
     : 'عندك حساب؟ <a id="goLogin">سجّل الدخول</a>';
@@ -352,6 +415,17 @@ function ProgressButton(btnEl, labelEl, pctEl, fillEl, formFields){
 }
 
 const mainBtn = document.getElementById('mainBtn');
+mainBtn.addEventListener('click', (e)=>{
+  const rect = mainBtn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+  ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+  mainBtn.appendChild(ripple);
+  setTimeout(()=> ripple.remove(), 650);
+});
 const mainBtnLabel = document.getElementById('mainBtnLabel');
 const mainBtnPct = document.getElementById('mainBtnPct');
 const mainBtnFill = document.getElementById('mainBtnFill');
@@ -401,6 +475,10 @@ mainBtn.addEventListener('click', async ()=>{
   if(mode==='register' && document.getElementById('nameInput').value.trim().length < 2){
     showError('الرجاء إدخال الاسم الكامل'); return;
   }
+  if(!window.PublicKeyCredential){
+    showError('هذا المتصفح لا يدعم تسجيل الدخول الآمن بالمصادقة البيومترية. الرجاء استخدام متصفح حديث مثل Chrome أو Safari أو Edge.');
+    return;
+  }
 
   try{
     await progressBtn.run(async ()=>{
@@ -446,7 +524,9 @@ function abortPendingWebAuthn(){
 async function startWebAuthnRegistration(phone, displayName){
   document.getElementById('phoneStep').style.display='none';
   document.getElementById('fingerprintStep').classList.add('show');
+  setAuthIcon();
   document.getElementById('fpTitle').textContent = 'سجّل بصمتك الآن لتأمين حسابك';
+  document.getElementById('fpSubtitle').textContent = 'سيستخدم جهازك أفضل وسيلة تحقق متوفرة';
   const fpProgress = startFpProgress();
 
   const begin = await callBackend('generateRegisterChallenge', {phone});
@@ -503,7 +583,9 @@ async function startWebAuthnRegistration(phone, displayName){
 async function startWebAuthnLogin(phone){
   document.getElementById('phoneStep').style.display='none';
   document.getElementById('fingerprintStep').classList.add('show');
-  document.getElementById('fpTitle').textContent = 'تحقق ببصمتك للدخول';
+  setAuthIcon();
+  document.getElementById('fpTitle').textContent = 'تحقق من هويتك';
+  document.getElementById('fpSubtitle').textContent = 'سيستخدم جهازك أفضل وسيلة تحقق متوفرة';
   const fpProgress = startFpProgress();
 
   const begin = await callBackend('generateLoginChallenge', {phone});
@@ -590,6 +672,47 @@ function guessDeviceName(){
   return 'جهاز غير معروف';
 }
 
+/* ============================================================
+ *  أيقونة المصادقة تتكيّف مع الجهاز — الواجهة لا "تفرض" طريقة معيّنة،
+ *  فقط تعرض إشارة بصرية مرجّحة؛ نظام التشغيل نفسه يتولى فعليًا
+ *  اختيار وعرض أفضل وسيلة تحقق متاحة (Face ID / بصمة / PIN...)
+ * ============================================================ */
+const AUTH_ICONS = {
+  fingerprint: `<svg width="46" height="46" viewBox="0 0 100 100" fill="none" stroke-linecap="round">
+    <path d="M50 28c-13 0-22 9-22 22v8" stroke-width="3.2"/>
+    <path d="M50 22c-17 0-29 12-29 28v9" stroke-width="3.2"/>
+    <path d="M50 35c-9 0-15 6-15 15v10c0 4 1 7 3 10" stroke-width="3.2"/>
+    <path d="M50 42c-5 0-8 3-8 8v9c0 6 2 11 6 15" stroke-width="3.2"/>
+    <path d="M50 49c-1.5 0-2 1-2 2v8c0 9 4 16 11 21" stroke-width="3.2"/>
+    <path d="M65 47v10c0 12-6 21-16 27" stroke-width="3.2"/>
+    <path d="M71 44v12c0 16-9 28-23 35" stroke-width="3.2"/>
+  </svg>`,
+  face: `<svg width="46" height="46" viewBox="0 0 100 100" fill="none" stroke-linecap="round">
+    <path d="M20 30V22a6 6 0 016-6h8" stroke-width="3.2"/>
+    <path d="M80 30V22a6 6 0 00-6-6h-8" stroke-width="3.2"/>
+    <path d="M20 70v8a6 6 0 006 6h8" stroke-width="3.2"/>
+    <path d="M80 70v8a6 6 0 01-6 6h-8" stroke-width="3.2"/>
+    <circle cx="38" cy="46" r="3" fill="currentColor" stroke="none"/>
+    <circle cx="62" cy="46" r="3" fill="currentColor" stroke="none"/>
+    <path d="M40 62c4 3 16 3 20 0" stroke-width="3.2"/>
+  </svg>`,
+  windows: `<svg width="46" height="46" viewBox="0 0 100 100" fill="none" stroke-linecap="round">
+    <rect x="18" y="18" width="28" height="28" rx="3" stroke-width="3.2"/>
+    <rect x="54" y="18" width="28" height="28" rx="3" stroke-width="3.2"/>
+    <rect x="18" y="54" width="28" height="28" rx="3" stroke-width="3.2"/>
+    <rect x="54" y="54" width="28" height="28" rx="3" stroke-width="3.2"/>
+  </svg>`
+};
+function detectAuthIconType(){
+  const ua = navigator.userAgent;
+  if(/iPhone|iPad|iPod/.test(ua)) return 'face';       // آيفون/آيباد الحديثة أغلبها Face ID
+  if(/Windows/.test(ua)) return 'windows';              // ويندوز → Windows Hello
+  return 'fingerprint';                                  // أندرويد وماك → بصمة
+}
+function setAuthIcon(){
+  document.getElementById('fpIcon').innerHTML = AUTH_ICONS[detectAuthIconType()];
+}
+
 /* ===== اقتراح آخر رقم جوال مستخدم تلقائيًا ===== */
 window.addEventListener('load', ()=>{
   const saved = localStorage.getItem('sec-phone');
@@ -600,6 +723,8 @@ window.addEventListener('load', ()=>{
       document.getElementById('selectedFlag').textContent = match.flag;
       document.getElementById('selectedCode').textContent = match.code;
       phoneInput.value = saved.slice(match.code.length);
+      positionPhoneLabel();
+      syncPhoneFloating();
     }
   }
 });
