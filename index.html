@@ -124,6 +124,36 @@ header{
   position:relative;
   display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;
   padding:85px 20px 100px;
+  min-height:calc(min(92vw, 82vh, 880px) + 125px);
+  min-height:calc(min(92vw, 82svh, 880px) + 125px);
+}
+@media (max-width:1199px) and (min-width:768px){
+  .hero{
+    min-height:calc(min(94vw, 78vh, 700px) + 125px);
+    min-height:calc(min(94vw, 78svh, 700px) + 125px);
+  }
+}
+@media (max-width:767px){
+  .hero{
+    min-height:calc(min(96vw, 72vh, 560px) + 104px);
+    min-height:calc(min(96vw, 72svh, 560px) + 104px);
+  }
+}
+body.guest-mode .hero{
+  min-height:calc(min(94vw, 86vh, 920px) + 125px);
+  min-height:calc(min(94vw, 86svh, 920px) + 125px);
+}
+@media (max-width:1199px) and (min-width:768px){
+  body.guest-mode .hero{
+    min-height:calc(min(96vw, 82vh, 740px) + 125px);
+    min-height:calc(min(96vw, 82svh, 740px) + 125px);
+  }
+}
+@media (max-width:767px){
+  body.guest-mode .hero{
+    min-height:calc(min(98vw, 76vh, 600px) + 104px);
+    min-height:calc(min(98vw, 76svh, 600px) + 104px);
+  }
 }
 .globe-stage{
   position:absolute;top:85px;left:50%;transform:translateX(-50%);
@@ -821,15 +851,14 @@ footer{
               <button type="button" class="paste-apply-btn" id="newStationPasteApply">تطبيق</button>
             </div>
           </div>
+          <input id="newStationReason" class="edit-input" placeholder="السبب (مثال: محطة جديدة)">
           <div id="addStationError" class="add-station-error"></div>
-          <button class="add-station-submit" id="addStationSubmitBtn">
-            <span id="addStationBtnLabel">حفظ المحطة</span>
-            <span id="addStationBtnPct" style="display:none"></span>
-          </button>
+          <button class="add-station-submit" id="addStationSubmitBtn">حفظ المحطة</button>
         </div>
         <div class="add-station-progress-track" id="addStationProgressTrack" style="display:none">
           <div class="add-station-progress-fill" id="addStationProgressFill"></div>
         </div>
+        <div id="addStationProgressLabel" style="display:none;text-align:center;font-size:11px;color:var(--text-secondary);margin-top:4px;font-family:'JetBrains Mono',monospace;">0%</div>
         <div id="addStationSuccess" style="display:none;text-align:center;padding:6px 0;">
           <div style="color:var(--teal);font-weight:700;font-size:14px;margin-bottom:6px;">✓ تمت إضافة المحطة بنجاح</div>
           <div style="font-size:11px;color:var(--text-secondary);margin-bottom:12px;">لازم تحدّث الصفحة أول قبل تقدر تبحث، عشان المحطة الجديدة تظهر بنتائج البحث</div>
@@ -1844,10 +1873,17 @@ document.getElementById('addStationSubmitBtn').addEventListener('click', async f
   document.getElementById('addStationFormBody').style.display = 'none';
   const progressTrack = document.getElementById('addStationProgressTrack');
   const progressFill = document.getElementById('addStationProgressFill');
+  const progressLabel = document.getElementById('addStationProgressLabel');
   progressTrack.style.display = 'block';
+  progressLabel.style.display = 'block';
   progressFill.style.width = '0%';
+  progressLabel.textContent = '0%';
   let p = 0;
-  const tick = setInterval(()=>{ p = Math.min(p + Math.random()*12, 90); progressFill.style.width = p+'%'; }, 150);
+  const tick = setInterval(()=>{
+    p = Math.min(p + Math.random()*12, 90);
+    progressFill.style.width = p+'%';
+    progressLabel.textContent = Math.round(p)+'%';
+  }, 150);
 
   const session = JSON.parse(localStorage.getItem('sec-session') || '{}');
   const opKey = 'addnew_' + stationId + '_' + Date.now();
@@ -1856,20 +1892,24 @@ document.getElementById('addStationSubmitBtn').addEventListener('click', async f
       opKey, phone: session.phone, stationId, type: newStationType,
       lat, lng,
       feeder: newStationType === 'توزيع' ? document.getElementById('newStationFeeder').value.trim() : undefined,
-      region: newStationType === 'توزيع' ? region : undefined
+      region: newStationType === 'توزيع' ? region : undefined,
+      reason: document.getElementById('newStationReason').value.trim()
     });
     clearInterval(tick);
     if(!res.success){ throw new Error(res.error || 'فشل الحفظ'); }
 
     progressFill.style.width = '100%';
+    progressLabel.textContent = '100%';
     setTimeout(()=>{
       progressTrack.style.display = 'none';
+      progressLabel.style.display = 'none';
       document.getElementById('addStationSuccess').style.display = 'block';
       // الواجهة تبقى مقفولة عمداً — الخروج الوحيد المتاح هو زر التحديث الإجباري
     }, 300);
   }catch(err){
     clearInterval(tick);
     progressTrack.style.display = 'none';
+    progressLabel.style.display = 'none';
     document.getElementById('addStationFormBody').style.display = 'block';
     errEl.textContent = err.message;
     unlockNavigationAfterSave();
@@ -1981,6 +2021,11 @@ function openEditForm(){
         </div>
         <div id="editPreviewMap" style="width:100%;height:150px;border-radius:8px;overflow:hidden;"></div>
       </div>
+      <input id="editReason" class="edit-input" placeholder="السبب (مثال: تصحيح موقع)" style="margin-top:8px;">
+      <div class="add-station-progress-track" id="editProgressTrack" style="display:none;margin-top:8px;">
+        <div class="add-station-progress-fill" id="editProgressFill"></div>
+      </div>
+      <div id="editProgressLabel" style="display:none;text-align:center;font-size:11px;color:var(--text-secondary);margin-top:4px;font-family:'JetBrains Mono',monospace;">0%</div>
       <div class="st-actions" style="margin-top:12px">
         <button class="st-btn primary" id="saveEditBtn">حفظ التعديل</button>
         <button class="st-btn" id="cancelEditBtn">إلغاء</button>
@@ -2052,8 +2097,22 @@ function openEditForm(){
     }
     errEl.style.display='none';
     btn.disabled = true;
-    btn.textContent = 'جاري الحفظ...';
+    document.getElementById('cancelEditBtn').disabled = true;
     lockNavigationDuringSave();
+
+    const progressTrack = document.getElementById('editProgressTrack');
+    const progressFill = document.getElementById('editProgressFill');
+    const progressLabel = document.getElementById('editProgressLabel');
+    progressTrack.style.display = 'block';
+    progressLabel.style.display = 'block';
+    progressFill.style.width = '0%';
+    progressLabel.textContent = '0%';
+    let p = 0;
+    const tick = setInterval(()=>{
+      p = Math.min(p + Math.random()*12, 90);
+      progressFill.style.width = p+'%';
+      progressLabel.textContent = Math.round(p)+'%';
+    }, 150);
 
     const session = JSON.parse(localStorage.getItem('sec-session') || '{}');
     const opKey = 'edit_' + s.id + '_' + Date.now();
@@ -2062,9 +2121,13 @@ function openEditForm(){
         opKey, phone: session.phone, stationId: s.id, type: s.type,
         lat, lng, method: 'يدوي/GPS',
         feeder: isDistribution ? document.getElementById('editFeeder').value.trim() : undefined,
-        region: isDistribution ? document.getElementById('editRegion').value.trim() : undefined
+        region: isDistribution ? document.getElementById('editRegion').value.trim() : undefined,
+        reason: document.getElementById('editReason').value.trim()
       });
+      clearInterval(tick);
       if(!res.success) throw new Error(res.error || 'فشل الحفظ');
+      progressFill.style.width = '100%';
+      progressLabel.textContent = '100%';
 
       stationTable.innerHTML = `
         <div class="sb-inner" style="text-align:center;">
@@ -2079,8 +2142,12 @@ function openEditForm(){
       if(marker) marker.setLatLng([lat,lng]);
       // الواجهة تبقى مقفولة عمداً حتى يضغط زر التحديث
     }catch(err){
+      clearInterval(tick);
+      progressTrack.style.display = 'none';
+      progressLabel.style.display = 'none';
       errEl.textContent = err.message; errEl.style.display='block';
       btn.disabled = false; btn.textContent = 'حفظ التعديل';
+      document.getElementById('cancelEditBtn').disabled = false;
       unlockNavigationAfterSave();
     }
   });
